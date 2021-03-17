@@ -58,8 +58,12 @@ func main() {
 
 	// check version by use
 	if argList[2] == "use" && data1 == "" && data2 == "" {
-		_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
-		fmt.Println(sCurrentVersion, sCurrentTag)
+		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
+		if basePath != "" {
+			fmt.Println(sCurrentVersion, sCurrentTag)
+		} else {
+			fmt.Println("(none)")
+		}
 		return
 	}
 
@@ -113,17 +117,18 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 	switch sCommand {
 	case "install":
 		install(repo, data1, data2, rootPath, sPlatfrom, sArch)
-	case "uninstall": // uninstall(detail)
+	case "uninstall":
+		uninstall(repo, data1, data2, rootPath, sPlatfrom)
 	case "use":
-		use(repo, data1, data2, rootPath, sPlatfrom, sArch)
+		use(repo, data1, data2, rootPath, sPlatfrom)
 	case "list":
 		list(repo, rootPath, sPlatfrom)
 	case "ls":
 		list(repo, rootPath, sPlatfrom)
 	case "unuse":
-		unuse(repo, sPlatfrom, rootPath)
+		unuse(repo, rootPath, sPlatfrom)
 	case "root":
-		fmt.Println("Current Root: " + rootPath)
+		fmt.Println("current root: " + rootPath)
 	case "version":
 		fmt.Println(UVMVersion)
 	case "v":
@@ -160,41 +165,111 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	return sUrl, sFileName
 }
 
+func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string, string, string) {
+	linkPath := ""
+	var err error
+
+	// Search Version
+	switch sPlatfrom {
+	case "windows":
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+		linkPath, err = os.Readlink(symPath)
+
+	}
+
+	if err != nil {
+		return "", "", ""
+	}
+
+	// if !ok {
+	// 	fmt.Println()
+	// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
+	// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
+	// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
+	// 	fmt.Println()
+	// }
+	baseFile := filepath.Base(linkPath)
+	sVersion, sTag := helper.GetVersionTagFromPath(baseFile)
+
+	return baseFile, sVersion, sTag
+}
+
 func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
 
 	sVersion = helper.GetVersionWithV(sVersion)
-
-	sUrl, sFileName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
 
 	sdkPath := filepath.Join(rootPath, repo.GetName())
 	if !file.IsExist(sdkPath) {
 		os.Mkdir(sdkPath, os.ModeDir)
 	}
+
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
-	sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
-	if err != nil {
-		printError(err)
+	if !file.IsExist(sSDKPathVersion) {
+		sUrl, sFileName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
+
+		sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
+		if err != nil {
+			printError(err)
+			return
+		}
+
+		// unzip
+		err = file.UnArchive(repo.GetArchiveType(), sTempFile, sdkPath, repo.GetIsRenameFolder(), sFileName, sFolderVersion)
+		if err != nil {
+			fmt.Println("Unzip Error ", err)
+			return
+		}
+
+		// remove Temp
+		err = os.Remove(sTempFile)
+		if err != nil {
+			fmt.Println("Error Delete Temp File", err)
+			return
+		}
+		fmt.Println("installed.")
+		fmt.Println()
+		fmt.Println("please run command:", "nvm", repo.GetCommand(), "use", sVersion, sTag)
+	} else {
+		fmt.Println("already installed :", repo.GetName(), sVersion, sTag)
+	}
+
+}
+
+func uninstall(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string) {
+	sVersion = helper.GetVersionWithV(sVersion)
+
+	// Make sure a version is specified
+	if sVersion == "" && sTag == "" {
+		printError("Provide the version you want to uninstall.")
+		printHelp()
 		return
 	}
 
-	// unzip
-	err = file.UnArchive(repo.GetArchiveType(), sTempFile, sdkPath, repo.GetIsRenameFolder(), sFileName, sFolderVersion)
-	if err != nil {
-		fmt.Println("Unzip Error ", err)
-		return
+	// check current use and remove symlink when use
+	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
+
+	if sCurrentVersion == sVersion && sCurrentTag == sTag {
+		unuse(repo, rootPath, sPlatfrom)
 	}
 
-	// remove Temp
-	err = os.Remove(sTempFile)
-	if err != nil {
-		fmt.Println("Error Delete Temp File", err)
-		return
-	}
-	fmt.Println("installed.")
-	fmt.Println()
-	fmt.Println("please run command:", "nvm", repo.GetCommand(), "use", sVersion, sTag)
+	// fmt.Println(sCurrentVersion, " == ", sVersion, " && ", sCurrentTag, " == ", sTag)
+	sdkPath := filepath.Join(rootPath, repo.GetName())
+	_, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
+	if file.IsExist(sSDKPathVersion) {
+		fmt.Println("uninstalling", repo.GetName(), sVersion, sTag)
+
+		err := os.RemoveAll(sSDKPathVersion)
+		if err != nil {
+			fmt.Println("error removing ", repo.GetName(), sVersion, sTag)
+			fmt.Println("manually remove " + sSDKPathVersion)
+		} else {
+			fmt.Printf("\nuninstalled.")
+		}
+	} else {
+		fmt.Println("not have installed :", repo.GetName(), sVersion, sTag)
+	}
 }
 
 func list(repo repository.Repository, rootPath string, sPlatfrom string) {
@@ -231,40 +306,9 @@ func list(repo repository.Repository, rootPath string, sPlatfrom string) {
 
 }
 
-func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string, string, string) {
-	linkPath := ""
-	// var err error
-
-	// Search Version
-	switch sPlatfrom {
-	case "windows":
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
-
-		linkPath, _ = os.Readlink(symPath)
-	}
-
-	// if err != nil {
-	// 	fmt.Println("check use version error", err)
-	// 	return "", "", ""
-	// }
-
-	// if !ok {
-	// 	fmt.Println()
-	// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
-	// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
-	// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
-	// 	fmt.Println()
-	// }
-
-	baseFile := filepath.Base(linkPath)
-	sVersion, sTag := helper.GetVersionTagFromPath(baseFile)
-
-	return baseFile, sVersion, sTag
-}
-
-func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string) {
 	// remove symlink if it already exists
-	removeSymLink(repo, sPlatfrom, rootPath)
+	removeSymLink(repo, rootPath, sPlatfrom)
 
 	// create symlink
 	sVersion = helper.GetVersionWithV(sVersion)
@@ -358,12 +402,12 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 
 }
 
-func unuse(repo repository.Repository, sPlatfrom string, rootPath string) {
-	removeSymLink(repo, sPlatfrom, rootPath)
+func unuse(repo repository.Repository, rootPath string, sPlatfrom string) {
+	removeSymLink(repo, rootPath, sPlatfrom)
 	fmt.Printf("remove symlink\n\n")
 }
 
-func removeSymLink(repo repository.Repository, sPlatfrom string, rootPath string) {
+func removeSymLink(repo repository.Repository, rootPath string, sPlatfrom string) {
 	switch sPlatfrom {
 	case "windows":
 		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
