@@ -36,47 +36,59 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// arm64
 
 	mapTagList := map[string]string{}
-	mapArchList[""] = "stable"
+	mapTagList[""] = "stable"
 
+	mapTagFolderList := map[string]string{}
+	mapTagFolderList[""] = "stable"
 	// ==================================
 
 	r := repo{
-		name:           "Flutter",
-		command:        "-f",
-		env:            "UVM_FLUTTER_HOME",
-		envBin:         "\\bin",
-		dist:           "https://storage.googleapis.com/flutter_infra/releases/",
-		path:           "{{tag}}/{{os}}/{{fileName}}.{{type}}",
-		fileName:       "flutter_{{os}}_{{version}}-{{tag}}",
-		zipFolderName:  "flutter",
-		fileType:       fileType,
-		archiveType:    archiveType,
-		mapOSList:      mapOSList,
-		mapArchList:    mapArchList,
-		mapTagList:     mapTagList,
-		isCreateFolder: false,
-		isRenameFolder: true,
+		isManualInstall:  false,
+		name:             "Flutter",
+		linkName:         "Flutter",
+		command:          "-f",
+		env:              "",
+		envBin:           "\\bin",
+		envChannel:       "",
+		linkPage:         "https://flutter.dev/docs/development/tools/sdk/releases",
+		dist:             "https://storage.googleapis.com/flutter_infra/releases/",
+		path:             "{{tagFolder}}/{{os}}/{{fileName}}.{{type}}",
+		fileName:         "flutter_{{os}}_{{version}}-{{tag}}",
+		zipFolderName:    "flutter",
+		fileType:         fileType,
+		archiveType:      archiveType,
+		mapOSList:        mapOSList,
+		mapArchList:      mapArchList,
+		mapTagList:       mapTagList,
+		mapTagFolderList: mapTagFolderList,
+		isCreateFolder:   false,
+		isRenameFolder:   true,
 	}
 
 	return &r, nil
 }
 
 type repo struct {
-	name           string
-	command        string
-	env            string
-	envBin         string
-	dist           string
-	path           string
-	fileName       string
-	zipFolderName  string
-	fileType       string
-	archiveType    string
-	mapOSList      map[string]string
-	mapArchList    map[string]string
-	mapTagList     map[string]string
-	isCreateFolder bool
-	isRenameFolder bool
+	isManualInstall  bool
+	name             string
+	linkName         string
+	command          string
+	env              string
+	envBin           string
+	envChannel       string
+	linkPage         string
+	dist             string
+	path             string
+	fileName         string
+	zipFolderName    string
+	fileType         string
+	archiveType      string
+	mapOSList        map[string]string
+	mapArchList      map[string]string
+	mapTagList       map[string]string
+	mapTagFolderList map[string]string
+	isCreateFolder   bool
+	isRenameFolder   bool
 }
 
 func (r *repo) GetDist() string {
@@ -87,6 +99,10 @@ func (r *repo) GetName() string {
 	return r.name
 }
 
+func (r *repo) GetLinkName() string {
+	return r.linkName
+}
+
 func (r *repo) GetCommand() string {
 	return r.command
 }
@@ -95,8 +111,16 @@ func (r *repo) GetEnv() string {
 	return r.env
 }
 
+func (r *repo) GetEnvChannel() string {
+	return r.envChannel
+}
+
 func (r *repo) GetEnvBin() string {
 	return r.envBin
+}
+
+func (r *repo) GetLinkPage() string {
+	return r.linkPage
 }
 
 func (r *repo) GetFileName() string {
@@ -143,6 +167,14 @@ func (r *repo) GetMapTagList(key string) string {
 	return r.mapTagList[key]
 }
 
+func (r *repo) GetMapTagFolderList(key string) string {
+	val := r.mapTagFolderList[key]
+	if val == "" {
+		return key
+	}
+	return r.mapTagFolderList[key]
+}
+
 func (r *repo) GetIsCreateFolder() bool {
 	return r.isCreateFolder
 }
@@ -151,8 +183,6 @@ func (r *repo) GetIsRenameFolder() bool {
 	return r.isRenameFolder
 }
 
-// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip
-// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.7z
-// node-v14.16.0-darwin-x64.tar.gz                    23-Feb-2021 00:29            31567754
-// node-v14.16.0-darwin-x64.tar.xz
-// https://nodejs.org/dist/latest-v14.x/
+func (r *repo) GetIsManualInstall() bool {
+	return r.isManualInstall
+}

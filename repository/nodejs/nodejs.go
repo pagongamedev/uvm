@@ -36,44 +36,57 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// arm64
 
 	mapTagList := map[string]string{}
+
+	mapTagFolderList := map[string]string{}
 	// ==================================
 
 	r := repo{
-		name:          "NodeJS",
-		command:       "-n",
-		env:           "UVM_NODEJS_HOME",
-		envBin:        "",
-		dist:          "https://nodejs.org/dist/",
-		path:          "v{{version}}/{{fileName}}.{{type}}",
-		fileName:      "node-v{{version}}-{{os}}-{{arch}}",
-		zipFolderName: "node-v{{version}}-{{os}}-{{arch}}",
-		fileType:      fileType,
-		archiveType:   archiveType,
-		mapOSList:     mapOSList,
-		mapArchList:   mapArchList,
-		mapTagList:    mapTagList, isCreateFolder: false,
-		isRenameFolder: true,
+		isManualInstall:  false,
+		name:             "NodeJS",
+		linkName:         "NodeJS",
+		command:          "-n",
+		env:              "",
+		envBin:           "",
+		envChannel:       "",
+		linkPage:         "https://nodejs.org/dist/",
+		dist:             "https://nodejs.org/dist/",
+		path:             "v{{version}}/{{fileName}}.{{type}}",
+		fileName:         "node-v{{version}}-{{os}}-{{arch}}",
+		zipFolderName:    "node-v{{version}}-{{os}}-{{arch}}",
+		fileType:         fileType,
+		archiveType:      archiveType,
+		mapOSList:        mapOSList,
+		mapArchList:      mapArchList,
+		mapTagFolderList: mapTagFolderList,
+		mapTagList:       mapTagList,
+		isCreateFolder:   false,
+		isRenameFolder:   true,
 	}
 
 	return &r, nil
 }
 
 type repo struct {
-	name           string
-	command        string
-	env            string
-	envBin         string
-	dist           string
-	path           string
-	fileName       string
-	zipFolderName  string
-	fileType       string
-	archiveType    string
-	mapOSList      map[string]string
-	mapArchList    map[string]string
-	mapTagList     map[string]string
-	isCreateFolder bool
-	isRenameFolder bool
+	isManualInstall  bool
+	name             string
+	linkName         string
+	command          string
+	env              string
+	envBin           string
+	envChannel       string
+	linkPage         string
+	dist             string
+	path             string
+	fileName         string
+	zipFolderName    string
+	fileType         string
+	archiveType      string
+	mapOSList        map[string]string
+	mapArchList      map[string]string
+	mapTagList       map[string]string
+	mapTagFolderList map[string]string
+	isCreateFolder   bool
+	isRenameFolder   bool
 }
 
 func (r *repo) GetDist() string {
@@ -84,6 +97,10 @@ func (r *repo) GetName() string {
 	return r.name
 }
 
+func (r *repo) GetLinkName() string {
+	return r.linkName
+}
+
 func (r *repo) GetCommand() string {
 	return r.command
 }
@@ -92,8 +109,16 @@ func (r *repo) GetEnv() string {
 	return r.env
 }
 
+func (r *repo) GetEnvChannel() string {
+	return r.envChannel
+}
+
 func (r *repo) GetEnvBin() string {
 	return r.envBin
+}
+
+func (r *repo) GetLinkPage() string {
+	return r.linkPage
 }
 
 func (r *repo) GetFileName() string {
@@ -140,6 +165,14 @@ func (r *repo) GetMapTagList(key string) string {
 	return r.mapTagList[key]
 }
 
+func (r *repo) GetMapTagFolderList(key string) string {
+	val := r.mapTagFolderList[key]
+	if val == "" {
+		return key
+	}
+	return r.mapTagFolderList[key]
+}
+
 func (r *repo) GetIsCreateFolder() bool {
 	return r.isCreateFolder
 }
@@ -148,8 +181,6 @@ func (r *repo) GetIsRenameFolder() bool {
 	return r.isRenameFolder
 }
 
-// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip
-// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.7z
-// node-v14.16.0-darwin-x64.tar.gz                    23-Feb-2021 00:29            31567754
-// node-v14.16.0-darwin-x64.tar.xz
-// https://nodejs.org/dist/latest-v14.x/
+func (r *repo) GetIsManualInstall() bool {
+	return r.isManualInstall
+}

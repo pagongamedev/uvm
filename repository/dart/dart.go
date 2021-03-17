@@ -1,4 +1,4 @@
-package golang
+package dart
 
 import (
 	"github.com/pagongamedev/uvm/repository"
@@ -13,11 +13,11 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 		fileType = "zip"
 		archiveType = "zip"
 	case "darwin":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	case "linux":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	default:
 		fileType = "zip"
 		archiveType = "zip"
@@ -26,34 +26,36 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// ==================================
 	mapOSList := map[string]string{}
 	// windows
-	// darwin
+	mapOSList["darwin"] = "macos"
 	// linux
-
 	mapArchList := map[string]string{}
 	// 386
-	// amd64
+	mapArchList["amd64"] = "x64"
 	// arm
 	// arm64
 
 	mapTagList := map[string]string{}
-	mapTagList[""] = "stable"
+	mapTagList["beta"] = ".beta"
+	mapTagList["dev"] = ".dev"
 
 	mapTagFolderList := map[string]string{}
+	mapTagFolderList[""] = "stable"
+
 	// ==================================
 
 	r := repo{
 		isManualInstall:  false,
-		name:             "Golang",
-		linkName:         "Golang",
-		command:          "-g",
+		name:             "Dart",
+		linkName:         "Dart",
+		command:          "-d",
 		env:              "",
 		envBin:           "\\bin",
 		envChannel:       "",
-		linkPage:         "https://golang.org/dl/",
-		dist:             "https://golang.org/dl/",
-		path:             "{{fileName}}.{{type}}",
-		fileName:         "go{{version}}.{{os}}-{{arch}}",
-		zipFolderName:    "go",
+		linkPage:         "https://dart.dev/tools/sdk/archive",
+		dist:             "https://storage.googleapis.com/dart-archive/channels/",
+		path:             "{{tagFolder}}/release/{{version}}{{tag}}/sdk/{{fileName}}.{{type}}",
+		fileName:         "dartsdk-{{os}}-{{arch}}-release",
+		zipFolderName:    "dart-sdk",
 		fileType:         fileType,
 		archiveType:      archiveType,
 		mapOSList:        mapOSList,

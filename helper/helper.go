@@ -13,7 +13,7 @@ func GetFolderVersion(sdkPath string, sVersion string, sTag string) (string, str
 	sFolderVersion := GetVersionWithV(sVersion)
 
 	if sTag != "" {
-		sFolderVersion += "-" + sTag
+		sFolderVersion += "__" + sTag
 	}
 
 	sSDKPathVersion := filepath.Join(sdkPath, sFolderVersion)
@@ -24,7 +24,7 @@ func GetFolderVersion(sdkPath string, sVersion string, sTag string) (string, str
 func GetVersionTagFromPath(baseFile string) (string, string) {
 	sVersion := ""
 	sTag := ""
-	strList := strings.SplitN(baseFile, "-", 2)
+	strList := strings.SplitN(baseFile, "__", 2)
 
 	if len(strList) > 0 {
 		sVersion = strList[0]
@@ -37,15 +37,19 @@ func GetVersionTagFromPath(baseFile string) (string, string) {
 }
 
 func GetVersionWithV(sVersion string) string {
-	if []rune(sVersion)[0] != 'v' {
-		sVersion = "v" + sVersion
+	if sVersion != "" {
+		if []rune(sVersion)[0] != 'v' {
+			sVersion = "v" + sVersion
+		}
 	}
 	return sVersion
 }
 
 func GetVersionWithOutV(sVersion string) string {
-	if []rune(sVersion)[0] == 'v' {
-		sVersion = strings.Replace(sVersion, "v", "", 1)
+	if sVersion != "" {
+		if []rune(sVersion)[0] == 'v' {
+			sVersion = strings.Replace(sVersion, "v", "", 1)
+		}
 	}
 	return sVersion
 }

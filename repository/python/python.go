@@ -1,4 +1,4 @@
-package golang
+package python
 
 import (
 	"github.com/pagongamedev/uvm/repository"
@@ -13,11 +13,11 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 		fileType = "zip"
 		archiveType = "zip"
 	case "darwin":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	case "linux":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	default:
 		fileType = "zip"
 		archiveType = "zip"
@@ -26,34 +26,36 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// ==================================
 	mapOSList := map[string]string{}
 	// windows
-	// darwin
+	mapOSList["darwin"] = "macos"
 	// linux
-
 	mapArchList := map[string]string{}
 	// 386
-	// amd64
+	mapArchList["amd64"] = "x64"
 	// arm
 	// arm64
 
 	mapTagList := map[string]string{}
-	mapTagList[""] = "stable"
+	mapTagList["beta"] = ".beta"
+	mapTagList["dev"] = ".dev"
 
 	mapTagFolderList := map[string]string{}
+	mapTagFolderList[""] = "stable"
+
 	// ==================================
 
 	r := repo{
-		isManualInstall:  false,
-		name:             "Golang",
-		linkName:         "Golang",
-		command:          "-g",
+		isManualInstall:  true,
+		name:             "Python",
+		linkName:         "Python",
+		command:          "-p",
 		env:              "",
-		envBin:           "\\bin",
+		envBin:           "",
 		envChannel:       "",
-		linkPage:         "https://golang.org/dl/",
-		dist:             "https://golang.org/dl/",
-		path:             "{{fileName}}.{{type}}",
-		fileName:         "go{{version}}.{{os}}-{{arch}}",
-		zipFolderName:    "go",
+		linkPage:         "https://www.python.org/downloads/",
+		dist:             "https://www.python.org/ftp/python/",
+		path:             "{{version}}/{{fileName}}.{{type}}",
+		fileName:         "Python-{{version}}",
+		zipFolderName:    "Python-{{version}}.{{type}}",
 		fileType:         fileType,
 		archiveType:      archiveType,
 		mapOSList:        mapOSList,
@@ -73,8 +75,8 @@ type repo struct {
 	linkName         string
 	command          string
 	env              string
-	envBin           string
 	envChannel       string
+	envBin           string
 	linkPage         string
 	dist             string
 	path             string

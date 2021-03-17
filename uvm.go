@@ -14,9 +14,13 @@ import (
 	"github.com/pagongamedev/uvm/file"
 	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/repository"
+	"github.com/pagongamedev/uvm/repository/dart"
 	"github.com/pagongamedev/uvm/repository/flutter"
 	"github.com/pagongamedev/uvm/repository/golang"
+	"github.com/pagongamedev/uvm/repository/java"
 	"github.com/pagongamedev/uvm/repository/nodejs"
+	"github.com/pagongamedev/uvm/repository/openjava"
+	"github.com/pagongamedev/uvm/repository/python"
 )
 
 const (
@@ -27,6 +31,7 @@ const (
 func main() {
 	data1 := ""
 	data2 := ""
+	data3 := ""
 
 	argList := os.Args
 	sPlatform := runtime.GOOS
@@ -50,6 +55,9 @@ func main() {
 	if len(argList) > 4 {
 		data2 = argList[4]
 	}
+	if len(argList) > 5 {
+		data3 = argList[5]
+	}
 
 	rootsPath, err := os.Executable()
 	MustError(err)
@@ -72,7 +80,7 @@ func main() {
 	// ================
 	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", repo.GetName(), sPlatform, sArch)
 
-	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatform, sArch)
+	RunCommand(argList[2], repo, data1, data2, data3, rootsPath, sPlatform, sArch)
 
 }
 
@@ -80,24 +88,32 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	var repo repository.Repository
 	var err error
 	switch strings.ToLower(sSDK) {
-	// case "-d": // Dart
-	// repo, _ = dart.NewRepository(sPlatform)
+	case "-d": // Dart
+		repo, _ = dart.NewRepository(sPlatform)
 	case "-f": // Flutter
 		repo, _ = flutter.NewRepository(sPlatform)
 	case "-g": // Golang
 		repo, _ = golang.NewRepository(sPlatform)
-	// case "-j": // Java
-	// repo, _ = java.NewRepository(sPlatform)
+	case "-j": // Java
+		repo, _ = java.NewRepository(sPlatform)
 	case "-n": // NodeJS
-		repo, err = nodejs.NewRepository(sPlatform)
-	//// case "-p": // Python
-	// 	// repo, _ = python.NewRepository(sPlatform)
+		repo, _ = nodejs.NewRepository(sPlatform)
+	case "-oj": // OpenJava
+		repo, _ = openjava.NewRepository(sPlatform)
+	case "-p": // Python
+		repo, _ = python.NewRepository(sPlatform)
 	//// case "-r": // Ruby
 	// 	// repo, _ = ruby.NewRepository(sPlatform)
 	case "list":
+		printVersionQuick(dart.NewRepository, sPlatform)
 		printVersionQuick(flutter.NewRepository, sPlatform)
 		printVersionQuick(golang.NewRepository, sPlatform)
+		printVersionQuick(java.NewRepository, sPlatform)
 		printVersionQuick(nodejs.NewRepository, sPlatform)
+		printVersionQuick(openjava.NewRepository, sPlatform)
+		printVersionQuick(python.NewRepository, sPlatform)
+		// printVersionQuick(ruby.NewRepository, sPlatform)
+
 		os.Exit(1)
 	}
 
@@ -108,10 +124,10 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	return repo, err
 }
 
-func RunCommand(sCommand string, repo repository.Repository, data1 string, data2 string, rootPath string, sPlatform string, sArch string) {
+func RunCommand(sCommand string, repo repository.Repository, data1 string, data2 string, data3 string, rootPath string, sPlatform string, sArch string) {
 	switch sCommand {
 	case "install":
-		install(repo, data1, data2, rootPath, sPlatform, sArch)
+		install(repo, data1, data2, data3, rootPath, sPlatform, sArch)
 	case "uninstall":
 		uninstall(repo, data1, data2, rootPath, sPlatform)
 	case "use":
@@ -149,7 +165,7 @@ func paddingSpace(str string, lenght int) string {
 	}
 }
 
-func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatform string, sArch string) (string, string, string) {
+func setUrl(repo repository.Repository, sVersion string, sTag string, sKey string, sPlatform string, sArch string) (string, string, string) {
 
 	sVersion = helper.GetVersionWithOutV(sVersion)
 
@@ -161,24 +177,32 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatform 
 		sArch = repo.GetMapArchList(sArch)
 	}
 
-	sTag = repo.GetMapArchList(sTag)
+	sMapTag := repo.GetMapTagList(sTag)
+	sMapTagFolder := repo.GetMapTagFolderList(sTag)
 
 	sFileName := repo.GetFileName()
 	sFileName = strings.ReplaceAll(sFileName, "{{version}}", sVersion)
-	sFileName = strings.ReplaceAll(sFileName, "{{tag}}", sTag)
+	sFileName = strings.ReplaceAll(sFileName, "{{tag}}", sMapTag)
+	sFileName = strings.ReplaceAll(sFileName, "{{tagFolder}}", sMapTagFolder)
 	sFileName = strings.ReplaceAll(sFileName, "{{os}}", sPlatform)
 	sFileName = strings.ReplaceAll(sFileName, "{{arch}}", sArch)
+	sFileName = strings.ReplaceAll(sFileName, "{{key}}", sKey)
 
 	sZipFolderName := repo.GetZipFolderName()
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{version}}", sVersion)
-	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{tag}}", sTag)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{tag}}", sMapTag)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{tagFolder}}", sMapTagFolder)
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{os}}", sPlatform)
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{arch}}", sArch)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{key}}", sKey)
+
 	sPath := repo.GetPath()
 	sPath = strings.ReplaceAll(sPath, "{{fileName}}", sFileName)
 	sPath = strings.ReplaceAll(sPath, "{{version}}", sVersion)
-	sPath = strings.ReplaceAll(sPath, "{{tag}}", sTag)
+	sPath = strings.ReplaceAll(sPath, "{{tag}}", sMapTag)
+	sPath = strings.ReplaceAll(sPath, "{{tagFolder}}", sMapTagFolder)
 	sPath = strings.ReplaceAll(sPath, "{{os}}", sPlatform)
+	sPath = strings.ReplaceAll(sPath, "{{key}}", sKey)
 	sPath = strings.ReplaceAll(sPath, "{{type}}", repo.GetFileType())
 
 	sUrl := repo.GetDist() + sPath
@@ -190,10 +214,17 @@ func getSDKCurrentVersion(repo repository.Repository, sPlatform string) (string,
 	linkPath := ""
 	var err error
 
+	if repo.GetEnvChannel() != "" {
+		envChannel, _ := os.LookupEnv(repo.GetEnvChannel())
+		if envChannel != repo.GetName() {
+			return "", "", ""
+		}
+
+	}
 	// Search Version
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetLinkName())
 		linkPath, err = os.Readlink(symPath)
 
 	}
@@ -208,23 +239,31 @@ func getSDKCurrentVersion(repo repository.Repository, sPlatform string) (string,
 	return baseFile, sVersion, sTag
 }
 
-func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatform string, sArch string) {
-
+func install(repo repository.Repository, sVersion string, sTag string, sKey string, rootPath string, sPlatform string, sArch string) {
 	sVersion = helper.GetVersionWithV(sVersion)
-
 	sdkPath := filepath.Join(rootPath, repo.GetName())
 	if !file.IsExist(sdkPath) {
 		os.Mkdir(sdkPath, os.ModeDir)
 	}
 
+	if repo.GetIsManualInstall() {
+		fmt.Printf("\nFailed Install : %v not supported cli download\n", repo.GetName())
+		fmt.Printf("\nplease download archive at :" + repo.GetLinkPage() + "\n")
+		fmt.Printf("and install at :" + sdkPath + "\\{{v0.0.0}}\\\n\n")
+		return
+	}
+
+	if sTag == "-" {
+		sTag = ""
+	}
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
-		sUrl, sFileName, sZipFolderName := setUrl(repo, sVersion, sTag, sPlatform, sArch)
+		sUrl, sFileName, sZipFolderName := setUrl(repo, sVersion, sTag, sKey, sPlatform, sArch)
 
 		sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 		if err != nil {
-			printError(err)
+			printError(err, "\nPlease Check Archive at :", repo.GetLinkPage())
 			return
 		}
 
@@ -338,7 +377,7 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 	switch sPlatform {
 	case "windows":
 
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetLinkName())
 
 		// create symlink
 		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
@@ -363,15 +402,46 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 	case "windows":
 		// sheck repo env
 		isUpdateEnv := false
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetLinkName())
+
 		uvmlink, ok := os.LookupEnv(ENVUVMLink)
 		if !ok {
-			createUVMLink(repo, uvmlink, rootPath, symPath)
+			createEnvUVMLink(repo, uvmlink, rootPath, symPath)
 			isUpdateEnv = true
 		} else {
 			if !strings.Contains(uvmlink, symPath) {
-				createUVMLink(repo, uvmlink, rootPath, symPath)
+				createEnvUVMLink(repo, uvmlink, rootPath, symPath)
 				isUpdateEnv = true
+			}
+		}
+
+		// Set Env
+		if repo.GetEnv() != "" {
+			_, ok := os.LookupEnv(repo.GetEnv())
+			if !ok {
+				isUpdateEnv = true
+			}
+
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				repo.GetEnv(),
+				filepath.Clean(symPath+repo.GetEnvBin()))) {
+				return
+			}
+		}
+
+		// Set Env Channel
+		if repo.GetEnvChannel() != "" {
+			_, ok := os.LookupEnv(repo.GetEnvChannel())
+			if !ok {
+				isUpdateEnv = true
+			}
+
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				repo.GetEnvChannel(),
+				repo.GetName())) {
+				return
 			}
 		}
 
@@ -386,7 +456,8 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 		}
 	}
 }
-func createUVMLink(repo repository.Repository, uvmlink string, rootPath string, symPath string) {
+func createEnvUVMLink(repo repository.Repository, uvmlink string, rootPath string, symPath string) {
+
 	sPre := ""
 	if uvmlink != "" {
 		sPre = ";"
@@ -408,7 +479,7 @@ func unuse(repo repository.Repository, rootPath string, sPlatform string) {
 func removeSymLink(repo repository.Repository, rootPath string, sPlatform string) {
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetLinkName())
 
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
@@ -456,20 +527,23 @@ func printHelp() {
 
 	fmt.Println("\nSupport:")
 	fmt.Println(" ")
-	// fmt.Println("  uvm -d            : Dart")
+	fmt.Println("  uvm -d            : Dart")
 	fmt.Println("  uvm -f            : Flutter")
 	fmt.Println("  uvm -g            : Golang")
-	// fmt.Println("  uvm -j            : Java")
+	fmt.Println("  uvm -j            : Java         [Manual Install]")
 	fmt.Println("  uvm -n            : NodeJS")
-	// fmt.Println("  uvm -p            : Python")
+	fmt.Println("  uvm -oj           : OpenJava     [Use Key]")
+	fmt.Println("  uvm -p            : Python       [Manual Install]")
 	// fmt.Println("  uvm -r            : Ruby")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
-	fmt.Println("  uvm [-SDK] install <version> <tag> : Install SDK Version.")
-	fmt.Println("  uvm [-SDK] uninstall <version>     : The version must be a specific version.")
-	fmt.Println("  uvm [-SDK] list                    : List Version Installed and Show Current Use")
-	fmt.Println("  uvm [-SDK] use <version> <tag>     : Switch to use the specified version.")
-	fmt.Println("  uvm [-SDK] unuse                   : Disable uvm.")
-	fmt.Println("  uvm [-SDK] root            	      : Show Root Path")
-	fmt.Println("  uvm [-SDK] version                 : Displays the current running version of uvm")
+	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")
+	fmt.Println("  uvm [-SDK] uninstall <version>        : The version must be a specific version.")
+	fmt.Println("  uvm [-SDK] list                       : List Version Installed and Show Current Use")
+	fmt.Println("  uvm [-SDK] use <version> <tag> <key>  : Switch to use the specified version.")
+	fmt.Println("                                          <tag> for channel look like dev , beta ")
+	fmt.Println("                                          <key> for download link with random string")
+	fmt.Println("  uvm [-SDK] unuse                      : Disable uvm.")
+	fmt.Println("  uvm [-SDK] root                       : Show Root Path")
+	fmt.Println("  uvm [-SDK] version                    : Displays the current running version of uvm")
 }

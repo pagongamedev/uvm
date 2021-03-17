@@ -6,8 +6,11 @@ Manage multiple installations of sdk on a Windows computer.
 
 # Supported
   ```
-  uvm -f : Flutter
-  uvm -n : NodeJS
+  uvm -d  : Dart
+  uvm -f  : Flutter
+  uvm -n  : NodeJS
+  uvm -g  : Golang
+  uvm -oj : OpenJava 
   ```
   <!-- uvm -d            : Dart
   uvm -f            : Flutter

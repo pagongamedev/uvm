@@ -1,4 +1,4 @@
-package golang
+package java
 
 import (
 	"github.com/pagongamedev/uvm/repository"
@@ -19,41 +19,41 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 		fileType = "tar.gz"
 		archiveType = "tar"
 	default:
-		fileType = "zip"
-		archiveType = "zip"
+		fileType = "tar.gz"
+		archiveType = "tar"
 	}
 
 	// ==================================
 	mapOSList := map[string]string{}
 	// windows
-	// darwin
+	mapOSList["darwin"] = "osx"
 	// linux
-
 	mapArchList := map[string]string{}
 	// 386
-	// amd64
+	mapArchList["amd64"] = "x64"
 	// arm
 	// arm64
 
 	mapTagList := map[string]string{}
-	mapTagList[""] = "stable"
 
 	mapTagFolderList := map[string]string{}
+
 	// ==================================
 
+	//
 	r := repo{
-		isManualInstall:  false,
-		name:             "Golang",
-		linkName:         "Golang",
-		command:          "-g",
-		env:              "",
+		isManualInstall:  true,
+		name:             "Java",
+		linkName:         "Java",
+		command:          "-oj",
+		env:              "JAVA_HOME",
 		envBin:           "\\bin",
-		envChannel:       "",
-		linkPage:         "https://golang.org/dl/",
-		dist:             "https://golang.org/dl/",
-		path:             "{{fileName}}.{{type}}",
-		fileName:         "go{{version}}.{{os}}-{{arch}}",
-		zipFolderName:    "go",
+		envChannel:       "UVM_JAVA_CHANNEL",
+		linkPage:         "https://www.oracle.com/java/technologies/javase-jdk16-downloads.html",
+		dist:             "https://download.oracle.com/otn-pub/java/jdk/",
+		path:             "{{key}}/{{fileName}}.{{type}}",
+		fileName:         "jdk-{{version}}_{{os}}-{{arch}}_bin",
+		zipFolderName:    "jdk-{{version}}",
 		fileType:         fileType,
 		archiveType:      archiveType,
 		mapOSList:        mapOSList,
