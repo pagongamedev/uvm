@@ -24,7 +24,7 @@ func GetFolderVersion(sdkPath string, sVersion string, sTag string) (string, str
 func GetVersionTagFromPath(baseFile string) (string, string) {
 	sVersion := ""
 	sTag := ""
-	strList := strings.SplitN(baseFile, "/", 2)
+	strList := strings.SplitN(baseFile, "-", 2)
 
 	if len(strList) > 0 {
 		sVersion = strList[0]

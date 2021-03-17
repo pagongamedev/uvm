@@ -162,7 +162,7 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	sPath = strings.ReplaceAll(sPath, "{{type}}", repo.GetFileType())
 
 	sUrl := repo.GetDist() + sPath
-	// fmt.Println("sUrl", sUrl)
+	fmt.Println("url : ", sUrl)
 	return sUrl, sFileName, sZipFolderName
 }
 
