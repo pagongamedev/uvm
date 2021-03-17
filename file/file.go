@@ -24,6 +24,8 @@ func UnArchive(ziptype string, src string, dest string, isRename bool, nameOld s
 		return UnZip(src, dest, isRename, nameOld, nameNew)
 	case "tar":
 		return UnTar(src, dest, isRename, nameOld, nameNew)
+	case "7z":
+		return Un7z(src, dest, isRename, nameOld, nameNew)
 	}
 	return errors.New("not match zip type")
 }
@@ -96,6 +98,32 @@ func UnZip(src string, dest string, isRename bool, nameOld string, nameNew strin
 			return err
 		}
 	}
+
+	return nil
+}
+
+func Un7z(src string, dest string, isRename bool, nameOld string, nameNew string) error {
+	// fmt.Println("src ", src)
+
+	// a, err := lzmadec.NewArchive(src)
+	// if err != nil {
+	// 	fmt.Printf("lzmadec.NewArchive('%s') failed with '%s'\n", src, err)
+	// 	os.Exit(1)
+	// }
+
+	// os.MkdirAll(dest, 0755)
+
+	// fmt.Printf("opened archive '%s'\n", src)
+	// fmt.Printf("Extracting %d entries\n", len(a.Entries))
+	// for _, e := range a.Entries {
+	// 	os.MkdirAll(dest+"\\"+e.Path, os.ModeDir)
+	// 	err = a.ExtractToFile(dest+"\\"+e.Path, e.Path)
+	// 	if err != nil {
+	// 		fmt.Printf("a.ExtractToFile('%s') failed with '%s'\n", e.Path, err)
+	// 		os.Exit(1)
+	// 	}
+	// 	fmt.Printf("Extracted '%s'\n", e.Path)
+	// }
 
 	return nil
 }

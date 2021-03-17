@@ -26,21 +26,17 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// ==================================
 	mapOSList := map[string]string{}
 	// windows
-	mapOSList["darwin"] = "macos"
+	// darwin
 	// linux
 	mapArchList := map[string]string{}
 	// 386
-	mapArchList["amd64"] = "x64"
+	// amd64
 	// arm
 	// arm64
 
 	mapTagList := map[string]string{}
-	mapTagList["beta"] = ".beta"
-	mapTagList["dev"] = ".dev"
 
 	mapTagFolderList := map[string]string{}
-	mapTagFolderList[""] = "stable"
-
 	// ==================================
 
 	r := repo{

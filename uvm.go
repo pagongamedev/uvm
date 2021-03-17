@@ -21,6 +21,7 @@ import (
 	"github.com/pagongamedev/uvm/repository/nodejs"
 	"github.com/pagongamedev/uvm/repository/openjava"
 	"github.com/pagongamedev/uvm/repository/python"
+	"github.com/pagongamedev/uvm/repository/ruby"
 )
 
 const (
@@ -102,8 +103,8 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 		repo, _ = openjava.NewRepository(sPlatform)
 	case "-p": // Python
 		repo, _ = python.NewRepository(sPlatform)
-	//// case "-r": // Ruby
-	// 	// repo, _ = ruby.NewRepository(sPlatform)
+	case "-r": // Ruby
+		repo, _ = ruby.NewRepository(sPlatform)
 	case "list":
 		printVersionQuick(dart.NewRepository, sPlatform)
 		printVersionQuick(flutter.NewRepository, sPlatform)
@@ -112,7 +113,7 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 		printVersionQuick(nodejs.NewRepository, sPlatform)
 		printVersionQuick(openjava.NewRepository, sPlatform)
 		printVersionQuick(python.NewRepository, sPlatform)
-		// printVersionQuick(ruby.NewRepository, sPlatform)
+		printVersionQuick(ruby.NewRepository, sPlatform)
 
 		os.Exit(1)
 	}
@@ -151,7 +152,7 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 
 func printVersionQuick(repoFunc func(string) (repository.Repository, error), sPlatform string) {
 	repo, _ := repoFunc(sPlatform)
-	sdkName := paddingSpace(repo.GetName(), 8)
+	sdkName := paddingSpace(repo.GetName(), 10)
 	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatform)
 	fmt.Println(sdkName+": "+sCurrentVersion, sCurrentTag)
 }
@@ -534,7 +535,7 @@ func printHelp() {
 	fmt.Println("  uvm -n            : NodeJS")
 	fmt.Println("  uvm -oj           : OpenJava     [Use Key]")
 	fmt.Println("  uvm -p            : Python       [Manual Install]")
-	// fmt.Println("  uvm -r            : Ruby")
+	fmt.Println("  uvm -r            : Ruby         [Manual Install]")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
 	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")

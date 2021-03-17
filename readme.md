@@ -9,17 +9,12 @@ Manage multiple installations of sdk on a Windows computer.
   uvm -d  : Dart
   uvm -f  : Flutter
   uvm -n  : NodeJS
+  uvm -j :  Java           [Manual Install]
   uvm -g  : Golang
-  uvm -oj : OpenJava 
+  uvm -oj : OpenJava       [Use Key]
+  uvm -p  : Python         [Manual Install]
+  uvm -r  : Ruby           [Manual Install]
   ```
-  <!-- uvm -d            : Dart
-  uvm -f            : Flutter
-  uvm -g            : Golang
-  uvm -j            : Java 
-  uvm -n            : NodeJS
-  uvm -p            : Python
-  uvm -r            : Ruby -->
-
 # Usage
   ```
 	uvm [-SDK] install <version> <tag> : Install SDK Version.

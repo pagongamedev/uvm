@@ -1,4 +1,4 @@
-package java
+package ruby
 
 import (
 	"github.com/pagongamedev/uvm/repository"
@@ -10,17 +10,17 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 
 	switch sPlatform {
 	case "windows":
-		fileType = "zip"
-		archiveType = "zip"
+		fileType = "7z"
+		archiveType = "7z"
 	case "darwin":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "7z"
+		archiveType = "7z"
 	case "linux":
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "7z"
+		archiveType = "7z"
 	default:
-		fileType = "tar.gz"
-		archiveType = "tar"
+		fileType = "7z"
+		archiveType = "7z"
 	}
 
 	// ==================================
@@ -30,7 +30,7 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	// linux
 	mapArchList := map[string]string{}
 	// 386
-	// amd64
+	mapArchList["amd64"] = "x64"
 	// arm
 	// arm64
 
@@ -39,20 +39,20 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	mapTagFolderList := map[string]string{}
 	// ==================================
 
-	//
 	r := repo{
-		isManualInstall:  true,
-		name:             "Java",
-		linkName:         "Java",
-		command:          "-oj",
-		env:              "JAVA_HOME",
-		envBin:           "\\bin",
-		envChannel:       "UVM_JAVA_CHANNEL",
-		linkPage:         "https://www.oracle.com/java/technologies/javase-jdk16-downloads.html",
-		dist:             "https://download.oracle.com/otn-pub/java/jdk/",
-		path:             "{{key}}/{{fileName}}.{{type}}",
-		fileName:         "jdk-{{version}}_{{os}}-{{arch}}_bin",
-		zipFolderName:    "jdk-{{version}}",
+		isManualInstall: true,
+		name:            "Ruby",
+		linkName:        "Ruby",
+		command:         "-r",
+		env:             "",
+		envBin:          "\\bin",
+		envChannel:      "",
+		linkPage:        "https://www.ruby-lang.org/en/downloads/",
+		dist:            "https://github.com/oneclick/rubyinstaller2/releases/download/",
+		// https://rubyinstaller.org/downloads/
+		path:             "RubyInstaller-{{version}}/{{fileName}}.{{type}}",
+		fileName:         "rubyinstaller-{{version}}-{{arch}}",
+		zipFolderName:    "rubyinstaller-{{version}}-{{arch}}",
 		fileType:         fileType,
 		archiveType:      archiveType,
 		mapOSList:        mapOSList,
@@ -72,8 +72,8 @@ type repo struct {
 	linkName         string
 	command          string
 	env              string
-	envBin           string
 	envChannel       string
+	envBin           string
 	linkPage         string
 	dist             string
 	path             string
