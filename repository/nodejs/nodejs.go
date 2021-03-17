@@ -109,3 +109,9 @@ func (r *repo) GetIsCreateFolder() bool {
 func (r *repo) GetIsRenameFolder() bool {
 	return r.isRenameFolder
 }
+
+// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip
+// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.7z
+// node-v14.16.0-darwin-x64.tar.gz                    23-Feb-2021 00:29            31567754
+// node-v14.16.0-darwin-x64.tar.xz
+// https://nodejs.org/dist/latest-v14.x/

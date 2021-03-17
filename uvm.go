@@ -68,18 +68,10 @@ func main() {
 	}
 
 	// ================
-	fmt.Printf("\nos: %v arch: %v\n", sPlatfrom, sArch)
-	fmt.Printf("seleted sdk : " + repo.GetName() + "\n\n")
+	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", repo.GetName(), sPlatfrom, sArch)
 
 	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatfrom, sArch)
 
-}
-
-func printHelp() {
-	fmt.Println("\nRunning version " + UVMVersion + ".")
-	fmt.Println("\nUsage:")
-	fmt.Println(" ")
-	fmt.Println("  uvm arch                     : Show if is running in 32 or 64 bit mode.")
 }
 
 func GetRepository(sSDK string, sPlatform string) (repository.Repository, error) {
@@ -100,8 +92,6 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 		// repo, _ = python.NewRepository(sPlatform)
 	case "-r": // Ruby
 		// repo, _ = ruby.NewRepository(sPlatform)
-	case "-t": // Terraform
-		// repo, _ = terraform.NewRepository(sPlatform)
 	case "list":
 
 	}
@@ -382,24 +372,6 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 			}
 		}
 	}
-
-	// Arch Adapter
-	// Zip Selector
-	//Dowmload
-	// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip
-	// https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.7z
-	// node-v14.16.0-darwin-x64.tar.gz                    23-Feb-2021 00:29            31567754
-	// node-v14.16.0-darwin-x64.tar.xz
-	// https://nodejs.org/dist/latest-v14.x/
-
-	// root: D:\SDK\Node\nvm
-	// path: C:\Program Files\nodejs
-	// https://nodejs.org/dist/
-	// node-v14.16.0-darwin-x64.tar.gz
-	//
-
-	// https://storage.googleapis.com/flutter_infra/releases/stable/windows/flutter_windows_2.0.2-stable.zip
-
 }
 
 func unuse(repo repository.Repository, rootPath string, sPlatfrom string) {
@@ -450,4 +422,28 @@ func MustError(err error, strList ...string) {
 			os.Exit(1)
 		}
 	}
+}
+
+func printHelp() {
+	fmt.Println("\nRunning version " + UVMVersion + ".")
+	fmt.Println("\nOS : " + runtime.GOOS + " Arch : " + runtime.GOARCH + ".")
+
+	fmt.Println("\nSupport:")
+	fmt.Println(" ")
+	// fmt.Println("  uvm -d            : Dart")
+	fmt.Println("  uvm -f            : Flutter")
+	// fmt.Println("  uvm -g            : Golang")
+	// fmt.Println("  uvm -j            : Java")
+	fmt.Println("  uvm -n            : NodeJS")
+	// fmt.Println("  uvm -p            : Python")
+	// fmt.Println("  uvm -r            : Ruby")
+	fmt.Println("\nUsage:")
+	fmt.Println(" ")
+	fmt.Println("  uvm [-SDK] install <version> <tag> : Install SDK Version.")
+	fmt.Println("  uvm [-SDK] uninstall <version>     : The version must be a specific version.")
+	fmt.Println("  uvm [-SDK] list                    : List Version Installed and Show Current Use")
+	fmt.Println("  uvm [-SDK] use <version> <tag>     : Switch to use the specified version.")
+	fmt.Println("  uvm [-SDK] unuse                   : Disable uvm.")
+	fmt.Println("  uvm [-SDK] root            	      : Show Root Path")
+	fmt.Println("  uvm [-SDK] version                 : Displays the current running version of uvm")
 }
