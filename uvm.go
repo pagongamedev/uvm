@@ -3,8 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -35,8 +37,6 @@ func main() {
 		}
 	}
 
-	fmt.Printf("\nos: %v arch: %v\n", sPlatfrom, sArch)
-
 	if len(argList) < 2 {
 		printHelp()
 		return
@@ -48,12 +48,23 @@ func main() {
 	if len(argList) > 4 {
 		data2 = argList[4]
 	}
+
 	rootsPath, err := os.Executable()
 	MustError(err)
 	rootsPath = filepath.Dir(rootsPath)
 
 	repo, err := GetRepository(argList[1], sPlatfrom)
 	MustError(err)
+
+	// check version by use
+	if argList[2] == "use" && data1 == "" && data2 == "" {
+		_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
+		fmt.Println(sCurrentVersion, sCurrentTag)
+		return
+	}
+
+	// ================
+	fmt.Printf("\nos: %v arch: %v\n", sPlatfrom, sArch)
 	fmt.Printf("seleted sdk : " + repo.GetName() + "\n\n")
 
 	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatfrom, sArch)
@@ -78,19 +89,21 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	case "-g": // Golang
 		// repo, _ = golang.NewRepository(sPlatform)
 	case "-j": // Java
-		// repo, _ = flutter.NewRepository(sPlatform)
+		// repo, _ = java.NewRepository(sPlatform)
 	case "-n": // NodeJS
 		repo, err = nodejs.NewRepository(sPlatform)
 	case "-p": // Python
 		// repo, _ = python.NewRepository(sPlatform)
 	case "-r": // Ruby
-		// repo, _ = python.NewRepository(sPlatform)
+		// repo, _ = ruby.NewRepository(sPlatform)
 	case "-t": // Terraform
 		// repo, _ = terraform.NewRepository(sPlatform)
+	case "list":
+
 	}
 
 	if repo == nil {
-		err = errors.New("not have platform \"" + sPlatform + "\"")
+		err = errors.New("not have platform \"" + sSDK + "\"")
 	}
 
 	return repo, err
@@ -104,9 +117,9 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 	case "use":
 		use(repo, data1, data2, rootPath, sPlatfrom, sArch)
 	case "list":
-		list(repo, sPlatfrom)
+		list(repo, rootPath, sPlatfrom)
 	case "ls":
-		list(repo, sPlatfrom)
+		list(repo, rootPath, sPlatfrom)
 	case "unuse":
 		unuse(repo, sPlatfrom, rootPath)
 	case "root":
@@ -131,15 +144,15 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	}
 
 	sFileName := repo.GetFileName()
-	sFileName = strings.ReplaceAll(sFileName, "{{version}}", "v"+sVersion)
+	sFileName = strings.ReplaceAll(sFileName, "{{version}}", sVersion)
 	sFileName = strings.ReplaceAll(sFileName, "{{tag}}", sTag)
 	sFileName = strings.ReplaceAll(sFileName, "{{os}}", sPlatfrom)
 	sFileName = strings.ReplaceAll(sFileName, "{{arch}}", sArch)
 
 	sPath := repo.GetPath()
 	sPath = strings.ReplaceAll(sPath, "{{fileName}}", sFileName)
-	sPath = strings.ReplaceAll(sPath, "{{version}}", "v"+sVersion)
-	sPath = strings.ReplaceAll(sPath, "{{tag}}", "v"+sTag)
+	sPath = strings.ReplaceAll(sPath, "{{version}}", sVersion)
+	sPath = strings.ReplaceAll(sPath, "{{tag}}", sTag)
 	sPath = strings.ReplaceAll(sPath, "{{type}}", repo.GetFileType())
 
 	sUrl := repo.GetDist() + sPath
@@ -148,6 +161,9 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 }
 
 func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+
+	sVersion = helper.GetVersionWithV(sVersion)
+
 	sUrl, sFileName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
 
 	sdkPath := filepath.Join(rootPath, repo.GetName())
@@ -169,8 +185,6 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 		return
 	}
 
-	fmt.Println("sSDKPathVersion ; ", sSDKPathVersion)
-
 	// remove Temp
 	err = os.Remove(sTempFile)
 	if err != nil {
@@ -183,55 +197,90 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 
 }
 
-func list(repo repository.Repository, sPlatfrom string) {
-	switch sPlatfrom {
-	case "windows":
-		symPath := filepath.Join("C:\\Program Files", repo.GetName())
-		fmt.Println("symPath : ", symPath)
+func list(repo repository.Repository, rootPath string, sPlatfrom string) {
 
-		fInfo, err := os.Lstat(symPath)
-		if err != nil {
-			fmt.Println("check use version error", err)
-			return
+	baseFile, _, _ := getSDKCurrentVersion(repo, sPlatfrom)
+
+	sPre := ""
+	sPost := ""
+
+	sdkPath := filepath.Join(rootPath, repo.GetName())
+
+	// versionList := []string{}
+	reg, _ := regexp.Compile("v")
+
+	files, _ := ioutil.ReadDir(sdkPath)
+	for i := len(files) - 1; i >= 0; i-- {
+		if files[i].IsDir() {
+			if reg.MatchString(files[i].Name()) {
+
+				if baseFile == files[i].Name() {
+					sPre = "*"
+					sPost = "(Currently)"
+				} else {
+					sPre = " "
+					sPost = ""
+				}
+				sVersion, sTag := helper.GetVersionTagFromPath(files[i].Name())
+
+				fmt.Printf(" %v %v %v %v\n", sPre, sVersion, sTag, sPost)
+				// versionList = append(versionList, files[i].Name())
+			}
 		}
-		// if !ok {
-		// 	fmt.Println()
-		// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
-		// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
-		// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
-		// 	fmt.Println()
-		// }
-
-		fmt.Println("fInfo : ", fInfo.Name())
 	}
 
 }
 
+func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string, string, string) {
+	linkPath := ""
+	// var err error
+
+	// Search Version
+	switch sPlatfrom {
+	case "windows":
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
+
+		linkPath, _ = os.Readlink(symPath)
+	}
+
+	// if err != nil {
+	// 	fmt.Println("check use version error", err)
+	// 	return "", "", ""
+	// }
+
+	// if !ok {
+	// 	fmt.Println()
+	// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
+	// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
+	// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
+	// 	fmt.Println()
+	// }
+
+	baseFile := filepath.Base(linkPath)
+	sVersion, sTag := helper.GetVersionTagFromPath(baseFile)
+
+	return baseFile, sVersion, sTag
+}
+
 func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+	// remove symlink if it already exists
+	removeSymLink(repo, sPlatfrom, rootPath)
+
 	// create symlink
+	sVersion = helper.GetVersionWithV(sVersion)
 
 	sdkPath := filepath.Join(rootPath, repo.GetName())
 	_, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
-		fmt.Println("error : not have installed :", repo.GetName(), "v"+sVersion, sTag)
+		fmt.Println("error : not have installed :", repo.GetName(), sVersion, sTag)
 		return
 	}
 
 	switch sPlatfrom {
 	case "windows":
 
-		symPath := filepath.Join("C:\\Program Files", repo.GetName())
-
-		// remove symlink if it already exists
-		sym, _ := os.Stat(symPath)
-		if sym != nil {
-			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C rmdir "%s"`,
-				filepath.Join(rootPath, "bin", "elevate.cmd"),
-				filepath.Clean(symPath))) {
-				return
-			}
-		}
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 
 		// create symlink
 		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
@@ -249,13 +298,14 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 
 		fmt.Printf("create symlink\n\n")
 	}
-	fmt.Printf("use %v %v %v\n\n", repo.GetName(), "v"+sVersion, sTag)
+	fmt.Printf("use %v %v %v\n\n", repo.GetName(), sVersion, sTag)
 
 	// check env
 	switch sPlatfrom {
 	case "windows":
 		// sheck repo env
-		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+		isUpdateEnv := false
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 		uvmlink, ok := os.LookupEnv(ENVUVMLink)
 		if !ok {
 			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
@@ -264,6 +314,8 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 				filepath.Clean(symPath))) {
 				return
 			}
+
+			isUpdateEnv = true
 		}
 
 		if !strings.Contains(uvmlink, symPath) {
@@ -276,10 +328,14 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 			}
 		}
 
-		// Check uvmlink in path
-		path := os.Getenv("path")
-		if !strings.Contains(path, symPath) {
-			fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
+		if isUpdateEnv {
+			fmt.Println("env updated please restart shell")
+		} else {
+			// Check uvmlink in path
+			path := os.Getenv("path")
+			if !strings.Contains(path, symPath) {
+				fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
+			}
 		}
 	}
 
@@ -303,9 +359,14 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 }
 
 func unuse(repo repository.Repository, sPlatfrom string, rootPath string) {
+	removeSymLink(repo, sPlatfrom, rootPath)
+	fmt.Printf("remove symlink\n\n")
+}
+
+func removeSymLink(repo repository.Repository, sPlatfrom string, rootPath string) {
 	switch sPlatfrom {
 	case "windows":
-		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
@@ -317,7 +378,6 @@ func unuse(repo repository.Repository, sPlatfrom string, rootPath string) {
 			}
 		}
 
-		fmt.Printf("remove symlink\n\n")
 	}
 }
 

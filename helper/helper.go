@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
 func GetFolderVersion(sdkPath string, sVersion string, sTag string) (string, string) {
-	sFolderVersion := "v" + sVersion
+	sFolderVersion := GetVersionWithV(sVersion)
 
 	if sTag != "" {
 		sFolderVersion += "-" + sTag
@@ -18,6 +19,28 @@ func GetFolderVersion(sdkPath string, sVersion string, sTag string) (string, str
 	sSDKPathVersion := filepath.Join(sdkPath, sFolderVersion)
 
 	return sFolderVersion, sSDKPathVersion
+}
+
+func GetVersionTagFromPath(baseFile string) (string, string) {
+	sVersion := ""
+	sTag := ""
+	strList := strings.SplitN(baseFile, "/", 2)
+
+	if len(strList) > 0 {
+		sVersion = strList[0]
+	}
+	if len(strList) > 1 {
+		sTag = strList[1]
+	}
+
+	return sVersion, sTag
+}
+
+func GetVersionWithV(sVersion string) string {
+	if []rune(sVersion)[0] != 'v' {
+		sVersion = "v" + sVersion
+	}
+	return sVersion
 }
 
 func RunCommand(command string) bool {

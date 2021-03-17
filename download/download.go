@@ -22,7 +22,7 @@ func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl s
 	if err != nil {
 		return "", errors.New("check url version not exist")
 	}
-	fmt.Println("installing :", repo.GetName(), "v"+sVersion)
+	fmt.Println("installing :", repo.GetName(), sVersion)
 	fmt.Println()
 
 	// Download
