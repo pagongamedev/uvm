@@ -8,10 +8,13 @@ type Repository interface {
 	GetEnv() string
 	GetEnvBin() string
 	GetFileName() string
+	GetZipFolderName() string
 	GetFileType() string
 	GetArchiveType() string
 	GetPath() string
-	GetMapList(key string) string
+	GetMapOSList(key string) string
+	GetMapArchList(key string) string
+	GetMapTagList(key string) string
 	GetIsCreateFolder() bool
 	GetIsRenameFolder() bool
 }

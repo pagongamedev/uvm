@@ -24,4 +24,5 @@ uvm
 
 #SDK Path
 NodeJS/
+Flutter/
 !repository/*

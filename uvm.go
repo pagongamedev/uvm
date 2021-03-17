@@ -14,6 +14,7 @@ import (
 	"github.com/pagongamedev/uvm/file"
 	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/repository"
+	"github.com/pagongamedev/uvm/repository/flutter"
 	"github.com/pagongamedev/uvm/repository/nodejs"
 )
 
@@ -81,7 +82,7 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	case "-d": // Dart
 		// repo, _ = dart.NewRepository(sPlatform)
 	case "-f": // Flutter
-		// repo, _ = flutter.NewRepository(sPlatform)
+		repo, _ = flutter.NewRepository(sPlatform)
 	case "-g": // Golang
 		// repo, _ = golang.NewRepository(sPlatform)
 	case "-j": // Java
@@ -128,15 +129,19 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 	}
 }
 
-func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom string, sArch string) (string, string) {
+func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom string, sArch string) (string, string, string) {
 
-	if repo.GetMapList(sPlatfrom) != "" {
-		sPlatfrom = repo.GetMapList(sPlatfrom)
+	sVersion = helper.GetVersionWithOutV(sVersion)
+
+	if repo.GetMapOSList(sPlatfrom) != "" {
+		sPlatfrom = repo.GetMapOSList(sPlatfrom)
 	}
 
-	if repo.GetMapList(sArch) != "" {
-		sArch = repo.GetMapList(sArch)
+	if repo.GetMapArchList(sArch) != "" {
+		sArch = repo.GetMapArchList(sArch)
 	}
+
+	sTag = repo.GetMapArchList(sTag)
 
 	sFileName := repo.GetFileName()
 	sFileName = strings.ReplaceAll(sFileName, "{{version}}", sVersion)
@@ -144,15 +149,21 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	sFileName = strings.ReplaceAll(sFileName, "{{os}}", sPlatfrom)
 	sFileName = strings.ReplaceAll(sFileName, "{{arch}}", sArch)
 
+	sZipFolderName := repo.GetZipFolderName()
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{version}}", sVersion)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{tag}}", sTag)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{os}}", sPlatfrom)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{arch}}", sArch)
 	sPath := repo.GetPath()
 	sPath = strings.ReplaceAll(sPath, "{{fileName}}", sFileName)
 	sPath = strings.ReplaceAll(sPath, "{{version}}", sVersion)
 	sPath = strings.ReplaceAll(sPath, "{{tag}}", sTag)
+	sPath = strings.ReplaceAll(sPath, "{{os}}", sPlatfrom)
 	sPath = strings.ReplaceAll(sPath, "{{type}}", repo.GetFileType())
 
 	sUrl := repo.GetDist() + sPath
-
-	return sUrl, sFileName
+	// fmt.Println("sUrl", sUrl)
+	return sUrl, sFileName, sZipFolderName
 }
 
 func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string, string, string) {
@@ -171,13 +182,6 @@ func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string,
 		return "", "", ""
 	}
 
-	// if !ok {
-	// 	fmt.Println()
-	// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
-	// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
-	// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
-	// 	fmt.Println()
-	// }
 	baseFile := filepath.Base(linkPath)
 	sVersion, sTag := helper.GetVersionTagFromPath(baseFile)
 
@@ -196,7 +200,7 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
-		sUrl, sFileName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
+		sUrl, sFileName, sZipFolderName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
 
 		sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 		if err != nil {
@@ -205,7 +209,7 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 		}
 
 		// unzip
-		err = file.UnArchive(repo.GetArchiveType(), sTempFile, sdkPath, repo.GetIsRenameFolder(), sFileName, sFolderVersion)
+		err = file.UnArchive(repo.GetArchiveType(), sTempFile, sdkPath, repo.GetIsRenameFolder(), sZipFolderName, sFolderVersion)
 		if err != nil {
 			fmt.Println("Unzip Error ", err)
 			return
@@ -219,7 +223,7 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 		}
 		fmt.Println("installed.")
 		fmt.Println()
-		fmt.Println("please run command:", "nvm", repo.GetCommand(), "use", sVersion, sTag)
+		fmt.Println("please run command:", "uvm", repo.GetCommand(), "use", sVersion, sTag)
 	} else {
 		fmt.Println("already installed :", repo.GetName(), sVersion, sTag)
 	}
@@ -342,23 +346,12 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 		uvmlink, ok := os.LookupEnv(ENVUVMLink)
 		if !ok {
-			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
-				filepath.Join(rootPath, "bin", "elevate.cmd"),
-				ENVUVMLink,
-				filepath.Clean(symPath))) {
-				return
-			}
-
+			createUVMLink(repo, uvmlink, rootPath, symPath)
 			isUpdateEnv = true
-		}
-
-		if !strings.Contains(uvmlink, symPath) {
-
-			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
-				filepath.Join(rootPath, "bin", "elevate.cmd"),
-				ENVUVMLink,
-				";"+filepath.Clean(symPath))) {
-				return
+		} else {
+			if !strings.Contains(uvmlink, symPath) {
+				createUVMLink(repo, uvmlink, rootPath, symPath)
+				isUpdateEnv = true
 			}
 		}
 
@@ -371,6 +364,19 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 				fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
 			}
 		}
+	}
+}
+func createUVMLink(repo repository.Repository, uvmlink string, rootPath string, symPath string) {
+	sPre := ""
+	if uvmlink != "" {
+		sPre = ";"
+	}
+
+	if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+		filepath.Join(rootPath, "bin", "elevate.cmd"),
+		ENVUVMLink,
+		uvmlink+sPre+filepath.Clean(symPath+repo.GetEnvBin()))) {
+		return
 	}
 }
 

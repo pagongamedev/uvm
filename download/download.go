@@ -39,6 +39,7 @@ func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl s
 }
 
 func Downloading(sUrl string, sTempFile string) bool {
+	fmt.Println("Downloading...")
 	output, err := os.Create(sTempFile)
 	if err != nil {
 		fmt.Println("Error while creating", sTempFile, "-", err)

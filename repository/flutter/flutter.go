@@ -1,4 +1,4 @@
-package nodejs
+package flutter
 
 import (
 	"github.com/pagongamedev/uvm/repository"
@@ -13,45 +13,48 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 		fileType = "zip"
 		archiveType = "zip"
 	case "darwin":
-		fileType = "tar.xz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	case "linux":
 		fileType = "tar.xz"
 		archiveType = "tar"
 	default:
-		fileType = "tar.xz"
-		archiveType = "tar"
+		fileType = "zip"
+		archiveType = "zip"
 	}
 
 	// ==================================
 	mapOSList := map[string]string{}
-	mapOSList["windows"] = "win"
+	// windows
+	mapOSList["darwin"] = "macos"
 	// linux
-	// darwin
 
 	mapArchList := map[string]string{}
-	mapArchList["386"] = "x32"
-	mapArchList["amd64"] = "x64"
+	// 386
+	// amd64
 	// arm
 	// arm64
 
 	mapTagList := map[string]string{}
+	mapArchList[""] = "stable"
+
 	// ==================================
 
 	r := repo{
-		name:          "NodeJS",
-		command:       "-n",
-		env:           "UVM_NODEJS_HOME",
-		envBin:        "",
-		dist:          "https://nodejs.org/dist/",
-		path:          "v{{version}}/{{fileName}}.{{type}}",
-		fileName:      "node-v{{version}}-{{os}}-{{arch}}",
-		zipFolderName: "node-v{{version}}-{{os}}-{{arch}}",
-		fileType:      fileType,
-		archiveType:   archiveType,
-		mapOSList:     mapOSList,
-		mapArchList:   mapArchList,
-		mapTagList:    mapTagList, isCreateFolder: false,
+		name:           "Flutter",
+		command:        "-f",
+		env:            "UVM_FLUTTER_HOME",
+		envBin:         "\\bin",
+		dist:           "https://storage.googleapis.com/flutter_infra/releases/",
+		path:           "{{tag}}/{{os}}/{{fileName}}.{{type}}",
+		fileName:       "flutter_{{os}}_{{version}}-{{tag}}",
+		zipFolderName:  "flutter",
+		fileType:       fileType,
+		archiveType:    archiveType,
+		mapOSList:      mapOSList,
+		mapArchList:    mapArchList,
+		mapTagList:     mapTagList,
+		isCreateFolder: false,
 		isRenameFolder: true,
 	}
 

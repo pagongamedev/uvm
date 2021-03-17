@@ -43,6 +43,13 @@ func GetVersionWithV(sVersion string) string {
 	return sVersion
 }
 
+func GetVersionWithOutV(sVersion string) string {
+	if []rune(sVersion)[0] == 'v' {
+		sVersion = strings.Replace(sVersion, "v", "", 1)
+	}
+	return sVersion
+}
+
 func RunCommand(command string) bool {
 	c := exec.Command("cmd") // dummy executable that actually needs to exist but we'll overwrite using .SysProcAttr
 

@@ -31,6 +31,6 @@ Manage multiple installations of sdk on a Windows computer.
 
 ## Windows
 
-## Mac
+## MacOS
 
 ## Linux
