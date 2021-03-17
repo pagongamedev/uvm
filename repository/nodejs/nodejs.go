@@ -32,7 +32,7 @@ func NewRepository(sPlatform string) (repository.Repository, error) {
 	r := repo{
 		name:           "NodeJS",
 		command:        "-n",
-		env:            "UVM_NodeJS_Home",
+		env:            "UVM_NODEJS_HOME",
 		envBin:         "\\bin",
 		dist:           "https://nodejs.org/dist/",
 		fileName:       "node-{{version}}-{{os}}-{{arch}}",
@@ -88,6 +88,10 @@ func (r *repo) GetFileName() string {
 
 func (r *repo) GetFileType() string {
 	return r.fileType
+}
+
+func (r *repo) GetArchiveType() string {
+	return r.archiveType
 }
 
 func (r *repo) GetPath() string {

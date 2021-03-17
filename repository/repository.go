@@ -9,6 +9,7 @@ type Repository interface {
 	GetEnvBin() string
 	GetFileName() string
 	GetFileType() string
+	GetArchiveType() string
 	GetPath() string
 	GetMapList(key string) string
 	GetIsCreateFolder() bool

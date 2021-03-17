@@ -17,22 +17,15 @@ import (
 var client = &http.Client{}
 
 //Test func
-func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl string, sFileName string, sVersion string, sTag string) (string, string, string, error) {
+func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl string, sFileName string, sVersion string, sTag, sFolderVersion string, sSDKPathVersion string) (string, error) {
 	err := checkExistUrl(sUrl)
 	if err != nil {
-		return "", "", "", errors.New("check url version not exist")
+		return "", errors.New("check url version not exist")
 	}
 	fmt.Println("installing :", repo.GetName(), "v"+sVersion)
 	fmt.Println()
 
 	// Download
-	sFolderVersion := "v" + sVersion
-
-	if sTag != "" {
-		sFolderVersion += "-" + sTag
-	}
-
-	sSDKPathVersion := filepath.Join(sdkPath, sFolderVersion)
 
 	if repo.GetIsCreateFolder() && !file.IsExist(sSDKPathVersion) {
 		os.Mkdir(sSDKPathVersion, os.ModeDir)
@@ -42,7 +35,7 @@ func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl s
 
 	Downloading(sUrl, sTempFile)
 
-	return sTempFile, sFolderVersion, sSDKPathVersion, nil
+	return sTempFile, nil
 }
 
 func Downloading(sUrl string, sTempFile string) bool {

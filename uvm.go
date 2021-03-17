@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,12 +10,14 @@ import (
 
 	"github.com/pagongamedev/uvm/download"
 	"github.com/pagongamedev/uvm/file"
+	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/repository"
 	"github.com/pagongamedev/uvm/repository/nodejs"
 )
 
 const (
-	UVMVersion = "0.0.1"
+	UVMVersion = "uvm@v0.0.1"
+	ENVUVMLink = "UVM_LINK"
 )
 
 func main() {
@@ -27,11 +28,17 @@ func main() {
 	sPlatfrom := runtime.GOOS
 	sArch := runtime.GOARCH
 
-	log.Printf("args %v\n", argList)
+	if len(argList) > 1 {
+		if argList[1] == "version" || argList[1] == "v" {
+			fmt.Println(UVMVersion)
+			os.Exit(1)
+		}
+	}
+
 	fmt.Printf("\nos: %v arch: %v\n", sPlatfrom, sArch)
 
 	if len(argList) < 2 {
-		helper()
+		printHelp()
 		return
 	}
 
@@ -45,20 +52,15 @@ func main() {
 	MustError(err)
 	rootsPath = filepath.Dir(rootsPath)
 
-	if argList[1] == "version" || argList[1] == "v" {
-		fmt.Println(UVMVersion)
-		os.Exit(1)
-	}
-
 	repo, err := GetRepository(argList[1], sPlatfrom)
 	MustError(err)
-	fmt.Println("seleted sdk : " + repo.GetName())
+	fmt.Printf("seleted sdk : " + repo.GetName() + "\n\n")
 
 	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatfrom, sArch)
 
 }
 
-func helper() {
+func printHelp() {
 	fmt.Println("\nRunning version " + UVMVersion + ".")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
@@ -99,23 +101,22 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 	case "install":
 		install(repo, data1, data2, rootPath, sPlatfrom, sArch)
 	case "uninstall": // uninstall(detail)
-	case "use": // use(detail,procarch)
-	case "list": // list(detail)
-	case "ls": // list(detail)
-	case "on": // enable()
-	case "off": // disable()
+	case "use":
+		use(repo, data1, data2, rootPath, sPlatfrom, sArch)
+	case "list":
+		list(repo, sPlatfrom)
+	case "ls":
+		list(repo, sPlatfrom)
+	case "unuse":
+		unuse(repo, sPlatfrom, rootPath)
 	case "root":
-	//   if len(args) == 3 {
-	// 	updateRootDir(args[2])
-	//   } else {
-	// 	fmt.Println("\nCurrent Root: "+env.root)
-	//   }
+		fmt.Println("Current Root: " + rootPath)
 	case "version":
-		// fmt.Println(UVMVersion)
+		fmt.Println(UVMVersion)
 	case "v":
-		// fmt.Println(UVMVersion)
+		fmt.Println(UVMVersion)
 	default:
-		helper()
+		printHelp()
 	}
 }
 
@@ -146,41 +147,29 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	return sUrl, sFileName
 }
 
-func install(repo repository.Repository, data1 string, data2 string, rootPath string, sPlatfrom string, sArch string) {
-	sUrl, sFileName := setUrl(repo, data1, data2, sPlatfrom, sArch)
+func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+	sUrl, sFileName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
 
 	sdkPath := filepath.Join(rootPath, repo.GetName())
 	if !file.IsExist(sdkPath) {
 		os.Mkdir(sdkPath, os.ModeDir)
 	}
+	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
-	sTempFile, sFolderVersion, sSDKPathVersion, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, data1, data2)
+	sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 	if err != nil {
 		printError(err)
 		return
 	}
 
-	err = file.UnArchive("zip", sTempFile, sdkPath, repo.GetIsRenameFolder(), sFileName, sFolderVersion)
+	// unzip
+	err = file.UnArchive(repo.GetArchiveType(), sTempFile, sdkPath, repo.GetIsRenameFolder(), sFileName, sFolderVersion)
 	if err != nil {
 		fmt.Println("Unzip Error ", err)
 		return
 	}
 
 	fmt.Println("sSDKPathVersion ; ", sSDKPathVersion)
-	// create symlink
-
-	switch sPlatfrom {
-	case "windows":
-
-		// symPath := filepath.Join("C:", "Program Files", repo.GetName())
-		// err = os.Symlink(symPath, sSDKPathVersion)
-		// if err != nil {
-		// 	fmt.Println("Symlink Error ", err)
-		// 	return
-		// }
-
-		fmt.Println("create symlink")
-	}
 
 	// remove Temp
 	err = os.Remove(sTempFile)
@@ -190,52 +179,109 @@ func install(repo repository.Repository, data1 string, data2 string, rootPath st
 	}
 	fmt.Println("installed.")
 	fmt.Println()
-	fmt.Println("please run command:", "nvm", repo.GetCommand(), "use", data1, data2)
+	fmt.Println("please run command:", "nvm", repo.GetCommand(), "use", sVersion, sTag)
+
+}
+
+func list(repo repository.Repository, sPlatfrom string) {
+	switch sPlatfrom {
+	case "windows":
+		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+		fmt.Println("symPath : ", symPath)
+
+		fInfo, err := os.Lstat(symPath)
+		if err != nil {
+			fmt.Println("check use version error", err)
+			return
+		}
+		// if !ok {
+		// 	fmt.Println()
+		// 	fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
+		// 	fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
+		// 	fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
+		// 	fmt.Println()
+		// }
+
+		fmt.Println("fInfo : ", fInfo.Name())
+	}
+
+}
+
+func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+	// create symlink
+
+	sdkPath := filepath.Join(rootPath, repo.GetName())
+	_, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
+
+	if !file.IsExist(sSDKPathVersion) {
+		fmt.Println("error : not have installed :", repo.GetName(), "v"+sVersion, sTag)
+		return
+	}
+
+	switch sPlatfrom {
+	case "windows":
+
+		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+
+		// remove symlink if it already exists
+		sym, _ := os.Stat(symPath)
+		if sym != nil {
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C rmdir "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				filepath.Clean(symPath))) {
+				return
+			}
+		}
+
+		// create symlink
+		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
+			filepath.Join(rootPath, "bin", "elevate.cmd"),
+			filepath.Clean(symPath),
+			sSDKPathVersion)) {
+			return
+		}
+
+		// err := os.Symlink(symPath, sSDKPathVersion)
+		// if err != nil {
+		// 	fmt.Println("Symlink Error ", err)
+		// 	return
+		// }
+
+		fmt.Printf("create symlink\n\n")
+	}
+	fmt.Printf("use %v %v %v\n\n", repo.GetName(), "v"+sVersion, sTag)
 
 	// check env
 	switch sPlatfrom {
 	case "windows":
-		symPath := filepath.Join("C:", "Program Files", repo.GetName())
-		_, ok := os.LookupEnv(repo.GetEnv())
+		// sheck repo env
+		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+		uvmlink, ok := os.LookupEnv(ENVUVMLink)
 		if !ok {
-			fmt.Println()
-			fmt.Println("env: \"" + repo.GetEnv() + "\" not Found.")
-			fmt.Println("please  set  env :", repo.GetEnv(), "=", symPath)
-			fmt.Println("and add path env : %" + repo.GetEnv() + "%" + repo.GetEnvBin())
-			fmt.Println()
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				ENVUVMLink,
+				filepath.Clean(symPath))) {
+				return
+			}
+		}
+
+		if !strings.Contains(uvmlink, symPath) {
+
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				ENVUVMLink,
+				";"+filepath.Clean(symPath))) {
+				return
+			}
+		}
+
+		// Check uvmlink in path
+		path := os.Getenv("path")
+		if !strings.Contains(path, symPath) {
+			fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
 		}
 	}
-
-	// //   // Remove symlink if it already exists
-	// //   sym, _ := os.Stat(env.symlink)
-	// //   if sym != nil {
-	// // 	if !runElevated(fmt.Sprintf(`"%s" cmd /C rmdir "%s"`,
-	// // 	  filepath.Join(env.root, "elevate.cmd"),
-	// // 	  filepath.Clean(env.symlink))) {
-	// // 	  return
-	// // 	}
-	// //   }
-
-	// // // Create new symlink
-	// // if !cmd.Command(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
-	// // 	filepath.Join(root, "bin", "elevate.cmd"),
-	// // 	filepath.Clean(symPath),
-	// // 	path)) {
-	// // 	return
-	// // }
-
-	// Delete Download
-
-	// pathOS := "C:\\Program Files\\"
-	// a, ok := os.LookupEnv("UVM_HOME_NODE")
-	// fmt.Println("a : ", a, ok)
-	// if !ok {
-	// 	os.Setenv("UVM_HOME_NODE", filepath.Join(pathOS, "Node", "bin"))
-	// }
-	// a, _ = os.LookupEnv("UVM_HOME_NODE")
-	// fmt.Println("b : ", a)
-
-	// fmt.Println("ENV sPath : " + os.Getenv("Path"))
 
 	// Arch Adapter
 	// Zip Selector
@@ -253,6 +299,26 @@ func install(repo repository.Repository, data1 string, data2 string, rootPath st
 	//
 
 	// https://storage.googleapis.com/flutter_infra/releases/stable/windows/flutter_windows_2.0.2-stable.zip
+
+}
+
+func unuse(repo repository.Repository, sPlatfrom string, rootPath string) {
+	switch sPlatfrom {
+	case "windows":
+		symPath := filepath.Join("C:\\Program Files", repo.GetName())
+
+		// remove symlink if it already exists
+		sym, _ := os.Stat(symPath)
+		if sym != nil {
+			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C rmdir "%s"`,
+				filepath.Join(rootPath, "bin", "elevate.cmd"),
+				filepath.Clean(symPath))) {
+				return
+			}
+		}
+
+		fmt.Printf("remove symlink\n\n")
+	}
 }
 
 // =====================================================================
@@ -272,11 +338,11 @@ func MustError(err error, strList ...string) {
 	if err != nil {
 		if strList != nil {
 			printError(strList)
-			helper()
+			printHelp()
 			os.Exit(1)
 		} else {
 			printError("error :", err)
-			helper()
+			printHelp()
 			os.Exit(1)
 		}
 	}
