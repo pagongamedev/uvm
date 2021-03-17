@@ -89,10 +89,10 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 		// repo, _ = java.NewRepository(sPlatform)
 	case "-n": // NodeJS
 		repo, err = nodejs.NewRepository(sPlatform)
-	case "-p": // Python
-		// repo, _ = python.NewRepository(sPlatform)
-	case "-r": // Ruby
-		// repo, _ = ruby.NewRepository(sPlatform)
+	// case "-p": // Python
+	// 	// repo, _ = python.NewRepository(sPlatform)
+	// case "-r": // Ruby
+	// 	// repo, _ = ruby.NewRepository(sPlatform)
 	case "list":
 
 	}
