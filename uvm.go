@@ -15,6 +15,7 @@ import (
 	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/repository"
 	"github.com/pagongamedev/uvm/repository/flutter"
+	"github.com/pagongamedev/uvm/repository/golang"
 	"github.com/pagongamedev/uvm/repository/nodejs"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	data2 := ""
 
 	argList := os.Args
-	sPlatfrom := runtime.GOOS
+	sPlatform := runtime.GOOS
 	sArch := runtime.GOARCH
 
 	if len(argList) > 1 {
@@ -54,12 +55,12 @@ func main() {
 	MustError(err)
 	rootsPath = filepath.Dir(rootsPath)
 
-	repo, err := GetRepository(argList[1], sPlatfrom)
+	repo, err := GetRepository(argList[1], sPlatform)
 	MustError(err)
 
 	// check version by use
 	if argList[2] == "use" && data1 == "" && data2 == "" {
-		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
+		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatform)
 		if basePath != "" {
 			fmt.Println(sCurrentVersion, sCurrentTag)
 		} else {
@@ -69,9 +70,9 @@ func main() {
 	}
 
 	// ================
-	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", repo.GetName(), sPlatfrom, sArch)
+	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", repo.GetName(), sPlatform, sArch)
 
-	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatfrom, sArch)
+	RunCommand(argList[2], repo, data1, data2, rootsPath, sPlatform, sArch)
 
 }
 
@@ -79,22 +80,25 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	var repo repository.Repository
 	var err error
 	switch strings.ToLower(sSDK) {
-	case "-d": // Dart
-		// repo, _ = dart.NewRepository(sPlatform)
+	// case "-d": // Dart
+	// repo, _ = dart.NewRepository(sPlatform)
 	case "-f": // Flutter
 		repo, _ = flutter.NewRepository(sPlatform)
 	case "-g": // Golang
-		// repo, _ = golang.NewRepository(sPlatform)
-	case "-j": // Java
-		// repo, _ = java.NewRepository(sPlatform)
+		repo, _ = golang.NewRepository(sPlatform)
+	// case "-j": // Java
+	// repo, _ = java.NewRepository(sPlatform)
 	case "-n": // NodeJS
 		repo, err = nodejs.NewRepository(sPlatform)
-	// case "-p": // Python
+	//// case "-p": // Python
 	// 	// repo, _ = python.NewRepository(sPlatform)
-	// case "-r": // Ruby
+	//// case "-r": // Ruby
 	// 	// repo, _ = ruby.NewRepository(sPlatform)
 	case "list":
-
+		printVersionQuick(flutter.NewRepository, sPlatform)
+		printVersionQuick(golang.NewRepository, sPlatform)
+		printVersionQuick(nodejs.NewRepository, sPlatform)
+		os.Exit(1)
 	}
 
 	if repo == nil {
@@ -104,20 +108,20 @@ func GetRepository(sSDK string, sPlatform string) (repository.Repository, error)
 	return repo, err
 }
 
-func RunCommand(sCommand string, repo repository.Repository, data1 string, data2 string, rootPath string, sPlatfrom string, sArch string) {
+func RunCommand(sCommand string, repo repository.Repository, data1 string, data2 string, rootPath string, sPlatform string, sArch string) {
 	switch sCommand {
 	case "install":
-		install(repo, data1, data2, rootPath, sPlatfrom, sArch)
+		install(repo, data1, data2, rootPath, sPlatform, sArch)
 	case "uninstall":
-		uninstall(repo, data1, data2, rootPath, sPlatfrom)
+		uninstall(repo, data1, data2, rootPath, sPlatform)
 	case "use":
-		use(repo, data1, data2, rootPath, sPlatfrom)
+		use(repo, data1, data2, rootPath, sPlatform)
 	case "list":
-		list(repo, rootPath, sPlatfrom)
+		list(repo, rootPath, sPlatform)
 	case "ls":
-		list(repo, rootPath, sPlatfrom)
+		list(repo, rootPath, sPlatform)
 	case "unuse":
-		unuse(repo, rootPath, sPlatfrom)
+		unuse(repo, rootPath, sPlatform)
 	case "root":
 		fmt.Println("current root: " + rootPath)
 	case "version":
@@ -129,12 +133,28 @@ func RunCommand(sCommand string, repo repository.Repository, data1 string, data2
 	}
 }
 
-func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom string, sArch string) (string, string, string) {
+func printVersionQuick(repoFunc func(string) (repository.Repository, error), sPlatform string) {
+	repo, _ := repoFunc(sPlatform)
+	sdkName := paddingSpace(repo.GetName(), 8)
+	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatform)
+	fmt.Println(sdkName+": "+sCurrentVersion, sCurrentTag)
+}
+
+func paddingSpace(str string, lenght int) string {
+	for {
+		str += " "
+		if len(str) > lenght {
+			return str[0:lenght]
+		}
+	}
+}
+
+func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatform string, sArch string) (string, string, string) {
 
 	sVersion = helper.GetVersionWithOutV(sVersion)
 
-	if repo.GetMapOSList(sPlatfrom) != "" {
-		sPlatfrom = repo.GetMapOSList(sPlatfrom)
+	if repo.GetMapOSList(sPlatform) != "" {
+		sPlatform = repo.GetMapOSList(sPlatform)
 	}
 
 	if repo.GetMapArchList(sArch) != "" {
@@ -146,19 +166,19 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	sFileName := repo.GetFileName()
 	sFileName = strings.ReplaceAll(sFileName, "{{version}}", sVersion)
 	sFileName = strings.ReplaceAll(sFileName, "{{tag}}", sTag)
-	sFileName = strings.ReplaceAll(sFileName, "{{os}}", sPlatfrom)
+	sFileName = strings.ReplaceAll(sFileName, "{{os}}", sPlatform)
 	sFileName = strings.ReplaceAll(sFileName, "{{arch}}", sArch)
 
 	sZipFolderName := repo.GetZipFolderName()
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{version}}", sVersion)
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{tag}}", sTag)
-	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{os}}", sPlatfrom)
+	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{os}}", sPlatform)
 	sZipFolderName = strings.ReplaceAll(sZipFolderName, "{{arch}}", sArch)
 	sPath := repo.GetPath()
 	sPath = strings.ReplaceAll(sPath, "{{fileName}}", sFileName)
 	sPath = strings.ReplaceAll(sPath, "{{version}}", sVersion)
 	sPath = strings.ReplaceAll(sPath, "{{tag}}", sTag)
-	sPath = strings.ReplaceAll(sPath, "{{os}}", sPlatfrom)
+	sPath = strings.ReplaceAll(sPath, "{{os}}", sPlatform)
 	sPath = strings.ReplaceAll(sPath, "{{type}}", repo.GetFileType())
 
 	sUrl := repo.GetDist() + sPath
@@ -166,12 +186,12 @@ func setUrl(repo repository.Repository, sVersion string, sTag string, sPlatfrom 
 	return sUrl, sFileName, sZipFolderName
 }
 
-func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string, string, string) {
+func getSDKCurrentVersion(repo repository.Repository, sPlatform string) (string, string, string) {
 	linkPath := ""
 	var err error
 
 	// Search Version
-	switch sPlatfrom {
+	switch sPlatform {
 	case "windows":
 		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 		linkPath, err = os.Readlink(symPath)
@@ -188,7 +208,7 @@ func getSDKCurrentVersion(repo repository.Repository, sPlatfrom string) (string,
 	return baseFile, sVersion, sTag
 }
 
-func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string, sArch string) {
+func install(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatform string, sArch string) {
 
 	sVersion = helper.GetVersionWithV(sVersion)
 
@@ -200,7 +220,7 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
-		sUrl, sFileName, sZipFolderName := setUrl(repo, sVersion, sTag, sPlatfrom, sArch)
+		sUrl, sFileName, sZipFolderName := setUrl(repo, sVersion, sTag, sPlatform, sArch)
 
 		sTempFile, err := download.Loading(repo, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 		if err != nil {
@@ -230,7 +250,7 @@ func install(repo repository.Repository, sVersion string, sTag string, rootPath 
 
 }
 
-func uninstall(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string) {
+func uninstall(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatform string) {
 	sVersion = helper.GetVersionWithV(sVersion)
 
 	// Make sure a version is specified
@@ -241,10 +261,10 @@ func uninstall(repo repository.Repository, sVersion string, sTag string, rootPat
 	}
 
 	// check current use and remove symlink when use
-	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatfrom)
+	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(repo, sPlatform)
 
 	if sCurrentVersion == sVersion && sCurrentTag == sTag {
-		unuse(repo, rootPath, sPlatfrom)
+		unuse(repo, rootPath, sPlatform)
 	}
 
 	// fmt.Println(sCurrentVersion, " == ", sVersion, " && ", sCurrentTag, " == ", sTag)
@@ -266,9 +286,9 @@ func uninstall(repo repository.Repository, sVersion string, sTag string, rootPat
 	}
 }
 
-func list(repo repository.Repository, rootPath string, sPlatfrom string) {
+func list(repo repository.Repository, rootPath string, sPlatform string) {
 
-	baseFile, _, _ := getSDKCurrentVersion(repo, sPlatfrom)
+	baseFile, _, _ := getSDKCurrentVersion(repo, sPlatform)
 
 	sPre := ""
 	sPost := ""
@@ -300,9 +320,9 @@ func list(repo repository.Repository, rootPath string, sPlatfrom string) {
 
 }
 
-func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatfrom string) {
+func use(repo repository.Repository, sVersion string, sTag string, rootPath string, sPlatform string) {
 	// remove symlink if it already exists
-	removeSymLink(repo, rootPath, sPlatfrom)
+	removeSymLink(repo, rootPath, sPlatform)
 
 	// create symlink
 	sVersion = helper.GetVersionWithV(sVersion)
@@ -315,7 +335,7 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 		return
 	}
 
-	switch sPlatfrom {
+	switch sPlatform {
 	case "windows":
 
 		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
@@ -339,7 +359,7 @@ func use(repo repository.Repository, sVersion string, sTag string, rootPath stri
 	fmt.Printf("use %v %v %v\n\n", repo.GetName(), sVersion, sTag)
 
 	// check env
-	switch sPlatfrom {
+	switch sPlatform {
 	case "windows":
 		// sheck repo env
 		isUpdateEnv := false
@@ -380,13 +400,13 @@ func createUVMLink(repo repository.Repository, uvmlink string, rootPath string, 
 	}
 }
 
-func unuse(repo repository.Repository, rootPath string, sPlatfrom string) {
-	removeSymLink(repo, rootPath, sPlatfrom)
+func unuse(repo repository.Repository, rootPath string, sPlatform string) {
+	removeSymLink(repo, rootPath, sPlatform)
 	fmt.Printf("remove symlink\n\n")
 }
 
-func removeSymLink(repo repository.Repository, rootPath string, sPlatfrom string) {
-	switch sPlatfrom {
+func removeSymLink(repo repository.Repository, rootPath string, sPlatform string) {
+	switch sPlatform {
 	case "windows":
 		symPath := filepath.Join("C:\\Program Files", "UVM_"+repo.GetName())
 
@@ -438,7 +458,7 @@ func printHelp() {
 	fmt.Println(" ")
 	// fmt.Println("  uvm -d            : Dart")
 	fmt.Println("  uvm -f            : Flutter")
-	// fmt.Println("  uvm -g            : Golang")
+	fmt.Println("  uvm -g            : Golang")
 	// fmt.Println("  uvm -j            : Java")
 	fmt.Println("  uvm -n            : NodeJS")
 	// fmt.Println("  uvm -p            : Python")
