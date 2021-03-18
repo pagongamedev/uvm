@@ -64,7 +64,7 @@ func UnZip(src string, dest string, isRename bool, nameOld string, nameNew strin
 
 		// Check for ZipSlip (Directory traversal)
 		if !strings.HasPrefix(path, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
+			return fmt.Errorf("illegal file Path: %s", path)
 		}
 
 		if f.FileInfo().IsDir() {

@@ -283,7 +283,7 @@ func install(repo repository.Repository, sVersion string, sTag string, sKey stri
 		}
 		fmt.Println("installed.")
 		fmt.Println()
-		fmt.Println("please run command:", "uvm", repo.GetCommand(), "use", sVersion, sTag)
+		fmt.Println("please run Command:", "uvm", repo.GetCommand(), "use", sVersion, sTag)
 	} else {
 		fmt.Println("already installed :", repo.GetName(), sVersion, sTag)
 	}

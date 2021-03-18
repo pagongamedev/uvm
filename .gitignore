@@ -31,4 +31,4 @@ Ruby/
 Java/
 OpenJava/
 Dart/
-!repository/*
+!sdk/*
