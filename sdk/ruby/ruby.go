@@ -4,7 +4,7 @@ import (
 	"github.com/pagongamedev/uvm/sdk"
 )
 
-func NewSDK(sPlatform string) (sdk.SDK, error) {
+func NewSDK(sPlatform string) (*sdk.SDK, error) {
 	var provider sdk.Provider
 	switch sPlatform {
 	case "windows":
@@ -17,7 +17,7 @@ func NewSDK(sPlatform string) (sdk.SDK, error) {
 
 	// ==================================
 
-	return sdk.SDK{
+	return &sdk.SDK{
 		Name:       "Ruby",
 		LinkName:   "Ruby",
 		Command:    "-r",

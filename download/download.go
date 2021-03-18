@@ -11,13 +11,13 @@ import (
 	"syscall"
 
 	"github.com/pagongamedev/uvm/file"
-	"github.com/pagongamedev/uvm/repository"
+	"github.com/pagongamedev/uvm/sdk"
 )
 
 var client = &http.Client{}
 
 //Test func
-func Loading(repo repository.Repository, rootPath string, sdkPath string, sUrl string, sFileName string, sVersion string, sTag, sFolderVersion string, sSDKPathVersion string) (string, error) {
+func Loading(repo sdk.SDK, rootPath string, sdkPath string, sUrl string, sFileName string, sVersion string, sTag, sFolderVersion string, sSDKPathVersion string) (string, error) {
 	err := checkExistUrl(sUrl)
 	if err != nil {
 		return "", errors.New("check url version not exist")
