@@ -69,7 +69,7 @@ func main() {
 
 	// check version by use
 	if argList[2] == "use" && data1 == "" && data2 == "" {
-		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(sd, sPlatform)
+		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sPlatform)
 		if basePath != "" {
 			fmt.Println(sCurrentVersion, sCurrentTag)
 		} else {
@@ -81,11 +81,11 @@ func main() {
 	// ================
 	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", sd.GetName(), sPlatform, sArch)
 
-	RunCommand(argList[2], sd, data1, data2, data3, rootsPath, sPlatform, sArch)
+	RunCommand(argList[2], *sd, data1, data2, data3, rootsPath, sPlatform, sArch)
 
 }
 
-func GetSDK(sSDK string, sPlatform string) (sdk.SDK, error) {
+func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	var sd *sdk.SDK
 	var err error
 	switch strings.ToLower(sSDK) {
@@ -120,9 +120,10 @@ func GetSDK(sSDK string, sPlatform string) (sdk.SDK, error) {
 
 	if sd == nil {
 		err = errors.New("not have platform \"" + sSDK + "\"")
+		return nil, err
 	}
 
-	return *sd, err
+	return sd, nil
 }
 
 func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 string, rootPath string, sPlatform string, sArch string) {
@@ -247,10 +248,14 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		os.Mkdir(sdkPath, os.ModeDir)
 	}
 
+	fmt.Println(sd.GetHeader())
+	fmt.Println(sd.GetLinkPage())
+
 	if sd.GetIsManualInstall() {
+
 		fmt.Printf("\nFailed Install : %v not supported cli download\n", sd.GetName())
 		fmt.Printf("\nplease download archive at :" + sd.GetLinkPage() + "\n")
-		fmt.Printf("and install at :" + sdkPath + "\\{{v0.0.0}}\\\n\n")
+		fmt.Printf("and install at : " + sdkPath + "\\{{v0.0.0}}\\\n\n")
 		return
 	}
 
