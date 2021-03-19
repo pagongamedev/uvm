@@ -24,7 +24,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "Java",
 		Command:    "-oj",
 		Env:        "JAVA_HOME",
-		EnvBin:     "\\bin",
+		EnvBin:     "bin",
 		EnvChannel: "UVM_JAVA_CHANNEL",
 		Provider:   provider,
 	}, nil

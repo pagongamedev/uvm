@@ -29,6 +29,12 @@ const (
 	ENVUVMLink = "UVM_LINK"
 )
 
+const (
+	InstallPathWindow = "C:\\Program Files"
+	InstallPathLinux  = "/usr/local/"
+	InstallPathDarwin = "/usr/local/"
+)
+
 func main() {
 	data1 := ""
 	data2 := ""
@@ -106,6 +112,7 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	case "-r": // Ruby
 		sd, _ = ruby.NewSDK(sPlatform)
 	case "list":
+		fmt.Println(printSDKWithPaddingSpace("uvm", UVMVersion, ""))
 		printVersionQuick(dart.NewSDK, sPlatform)
 		printVersionQuick(flutter.NewSDK, sPlatform)
 		printVersionQuick(golang.NewSDK, sPlatform)
@@ -153,9 +160,8 @@ func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 s
 
 func printVersionQuick(sdFunc func(string) (*sdk.SDK, error), sPlatform string) {
 	sd, _ := sdFunc(sPlatform)
-	sdkName := paddingSpace(sd.GetName(), 10)
 	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sPlatform)
-	fmt.Println(sdkName+": "+sCurrentVersion, sCurrentTag)
+	fmt.Println(printSDKWithPaddingSpace(sd.GetName(), sCurrentVersion, sCurrentTag))
 }
 
 func paddingSpace(str string, lenght int) string {
@@ -226,7 +232,7 @@ func getSDKCurrentVersion(sd sdk.SDK, sPlatform string) (string, string, string)
 	// Search Version
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+sd.GetLinkName())
+		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 		linkPath, err = os.Readlink(symPath)
 
 	}
@@ -383,7 +389,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 	switch sPlatform {
 	case "windows":
 
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+sd.GetLinkName())
+		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 
 		// create symlink
 		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
@@ -408,7 +414,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 	case "windows":
 		// sheck sd env
 		isUpdateEnv := false
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+sd.GetLinkName())
+		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 
 		uvmlink, ok := os.LookupEnv(ENVUVMLink)
 		if !ok {
@@ -431,7 +437,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
 				filepath.Join(rootPath, "bin", "elevate.cmd"),
 				sd.GetEnv(),
-				filepath.Clean(symPath+sd.GetEnvBin()))) {
+				filepath.Clean(filepath.Join(symPath, sd.GetEnvBin())))) {
 				return
 			}
 		}
@@ -472,7 +478,7 @@ func createEnvUVMLink(sd sdk.SDK, uvmlink string, rootPath string, symPath strin
 	if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
 		filepath.Join(rootPath, "bin", "elevate.cmd"),
 		ENVUVMLink,
-		uvmlink+sPre+filepath.Clean(symPath+sd.GetEnvBin()))) {
+		uvmlink+sPre+filepath.Clean(filepath.Join(symPath, sd.GetEnvBin())))) {
 		return
 	}
 }
@@ -485,7 +491,7 @@ func unuse(sd sdk.SDK, rootPath string, sPlatform string) {
 func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join("C:\\Program Files", "UVM_"+sd.GetLinkName())
+		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
@@ -498,6 +504,14 @@ func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 		}
 
 	}
+}
+
+func ConvertLinkName(sName string) string {
+	return "uvm_" + strings.ToLower(sName)
+}
+
+func printSDKWithPaddingSpace(sName string, sVersion string, sTag string) string {
+	return paddingSpace(sName, 10) + ": " + sVersion + " " + sTag
 }
 
 // =====================================================================
@@ -532,15 +546,15 @@ func printHelp() {
 	fmt.Println("\nOS : " + runtime.GOOS + " Arch : " + runtime.GOARCH + ".")
 
 	fmt.Println("\nSupport:")
-	fmt.Println(" ")
-	fmt.Println("  uvm -d            : Dart")
-	fmt.Println("  uvm -f            : Flutter")
-	fmt.Println("  uvm -g            : Golang")
-	fmt.Println("  uvm -j            : Java         [Manual Install]")
-	fmt.Println("  uvm -n            : NodeJS")
-	fmt.Println("  uvm -oj           : OpenJava     [Use Key]")
-	fmt.Println("  uvm -p            : Python       [Manual Install]")
-	fmt.Println("  uvm -r            : Ruby         [Manual Install]")
+	fmt.Println("                                |     Window     |     Darwin     |     Linux")
+	fmt.Println("  uvm -d            : Dart           Suported")
+	fmt.Println("  uvm -f            : Flutter        Suported")
+	fmt.Println("  uvm -g            : Golang         Suported")
+	fmt.Println("  uvm -j            : Java         [Manual Ins.]")
+	fmt.Println("  uvm -n            : NodeJS          Suported")
+	fmt.Println("  uvm -oj           : OpenJava       [Use Key]")
+	fmt.Println("  uvm -p            : Python       [Manual Ins.]")
+	fmt.Println("  uvm -r            : Ruby         [Manual Ins.]")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
 	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")

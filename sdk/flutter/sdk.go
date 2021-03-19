@@ -24,7 +24,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "Flutter",
 		Command:    "-f",
 		Env:        "",
-		EnvBin:     "\\bin",
+		EnvBin:     "bin",
 		EnvChannel: "",
 		Provider:   provider,
 	}, nil

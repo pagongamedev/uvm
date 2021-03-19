@@ -22,7 +22,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "Ruby",
 		Command:    "-r",
 		Env:        "",
-		EnvBin:     "\\bin",
+		EnvBin:     "bin",
 		EnvChannel: "",
 		Provider:   provider,
 	}, nil

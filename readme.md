@@ -28,6 +28,66 @@ Manage multiple installations of sdk on a Windows computer.
 # Installing
 
 ## Windows
+1. Extract Installer Zip to SDK Folder somewhere in your pc
+   
+  - Recommend Add Drive "D:" for reuse when formatted Windows like this
+
+    ```
+    D:\SDK\uvm
+    ```
+
+  - ! Not Recommend Installation In "Program File" , "Program Data" , "AppData" Because Losting When Formatted Windows and Consumed Space In your SSD Drive
+
+2. Append "D:\SDK\uvm" and "%UVM_LINK%" to ENV:"Path" in System Variables
+- ENV:"Path"
+
+  ```
+  D:\SDK\uvm
+  ```
+  ```
+  %UVM_LINK%
+  ```
+    
+
+
+2. open shell like CMD or Powershell with Administrator Mode (Use for Creak SymLink)
+   and run this command for using
+   
+   ```
+   $ uvm list
+   $ uvm 
+   ```
+
+
+<b> Optional </b>
+
+  For Quick Step for not more time for restart shell when ENV Update Please Create This
+
+1. Create UVM_LINK in System Variables
+  
+
+- ENV : "UVM_LINK"
+ 
+  ```
+  C:\Program Files\uvm_nodejs;C:\Program Files\uvm_flutter\bin;C:\Program Files\uvm_golang\bin;C:\Program Files\uvm_dart\bin;C:\Program Files\uvm_java\bin;C:\Program Files\uvm_python;C:\Program Files\uvm_ruby\bin;
+  ```
+
+2. Create UVM_JAVA_CHANNEL in System Variables
+
+- ENV : "UVM_JAVA_CHANNEL"
+ 
+  ```
+  Java
+  ```
+
+3. Delete or Create JAVA_HOME 
+
+- ENV : "JAVA_HOME"
+ 
+   ```
+   C:\Program Files\uvm_java\bin
+   ```
+
 
 ## MacOS
 

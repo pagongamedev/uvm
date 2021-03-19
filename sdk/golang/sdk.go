@@ -24,7 +24,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "Golang",
 		Command:    "-g",
 		Env:        "",
-		EnvBin:     "\\bin",
+		EnvBin:     "bin",
 		EnvChannel: "",
 		Provider:   provider,
 	}, nil

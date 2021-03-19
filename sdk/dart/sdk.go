@@ -24,7 +24,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "Dart",
 		Command:    "-d",
 		Env:        "",
-		EnvBin:     "\\bin",
+		EnvBin:     "bin",
 		EnvChannel: "",
 		Provider:   provider,
 	}, nil
