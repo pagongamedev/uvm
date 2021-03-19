@@ -25,8 +25,9 @@ import (
 )
 
 const (
-	UVMVersion = "uvm@v0.0.1"
-	ENVUVMLink = "UVM_LINK"
+	UVMVersion    = "0.0.1"
+	UVMTagVersion = "uvm@" + UVMVersion
+	ENVUVMLink    = "UVM_LINK"
 )
 
 const (
@@ -46,7 +47,7 @@ func main() {
 
 	if len(argList) > 1 {
 		if argList[1] == "version" || argList[1] == "v" {
-			fmt.Println(UVMVersion)
+			fmt.Println(UVMTagVersion)
 			os.Exit(1)
 		}
 	}
@@ -112,7 +113,7 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	case "-r": // Ruby
 		sd, _ = ruby.NewSDK(sPlatform)
 	case "list":
-		fmt.Println(printSDKWithPaddingSpace("uvm", UVMVersion, ""))
+		fmt.Println(printSDKWithPaddingSpace("uvm", "v"+UVMVersion, ""))
 		printVersionQuick(dart.NewSDK, sPlatform)
 		printVersionQuick(flutter.NewSDK, sPlatform)
 		printVersionQuick(golang.NewSDK, sPlatform)
@@ -150,9 +151,9 @@ func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 s
 	case "root":
 		fmt.Println("current root: " + rootPath)
 	case "version":
-		fmt.Println(UVMVersion)
+		fmt.Println(UVMTagVersion)
 	case "v":
-		fmt.Println(UVMVersion)
+		fmt.Println(UVMTagVersion)
 	default:
 		printHelp()
 	}
@@ -542,7 +543,7 @@ func MustError(err error, strList ...string) {
 }
 
 func printHelp() {
-	fmt.Println("\nRunning version " + UVMVersion + ".")
+	fmt.Println("\nRunning version " + UVMTagVersion + ".")
 	fmt.Println("\nOS : " + runtime.GOOS + " Arch : " + runtime.GOARCH + ".")
 
 	fmt.Println("\nSupport:")
