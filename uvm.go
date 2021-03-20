@@ -433,11 +433,13 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 	}
 
 	// Set Env Channel
-	jsonChannelFilePath := filepath.Clean(filepath.Join(rootPath, FileJsonChannel))
-	isSameSDK, channelDataList := ReadEnvChannel(sd, jsonChannelFilePath)
-	if !isSameSDK {
-		channelDataList[sd.GetEnvChannel()] = sd.GetName()
-		file.WriteJSONFile(jsonChannelFilePath, channelDataList)
+	if sd.GetEnvChannel() != "" {
+		jsonChannelFilePath := filepath.Clean(filepath.Join(rootPath, FileJsonChannel))
+		isSameSDK, channelDataList := ReadEnvChannel(sd, jsonChannelFilePath)
+		if !isSameSDK {
+			channelDataList[sd.GetEnvChannel()] = sd.GetName()
+			file.WriteJSONFile(jsonChannelFilePath, channelDataList)
+		}
 	}
 
 	if isUpdateEnv {
