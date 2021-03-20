@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/pagongamedev/uvm/file"
@@ -17,25 +16,23 @@ import (
 var client = &http.Client{}
 
 //Test func
-func Loading(repo sdk.SDK, rootPath string, sdkPath string, sUrl string, sFileName string, sVersion string, sTag, sFolderVersion string, sSDKPathVersion string) (string, error) {
+func Loading(sd sdk.SDK, rootPath string, sdkPath string, sUrl string, sTempFile string, sFileName string, sVersion string, sTag, sFolderVersion string, sSDKPathVersion string) error {
 	err := checkExistUrl(sUrl)
 	if err != nil {
-		return "", errors.New("check url version not exist")
+		return errors.New("check url version not exist")
 	}
-	fmt.Println("installing :", repo.GetName(), sVersion, sTag)
+	fmt.Println("installing :", sd.GetName(), sVersion, sTag)
 	fmt.Println()
 
 	// Download
 
-	if repo.GetIsCreateFolder() && !file.IsExist(sSDKPathVersion) {
+	if sd.GetIsCreateFolder() && !file.IsExist(sSDKPathVersion) {
 		os.Mkdir(sSDKPathVersion, os.ModeDir)
 	}
-	sTempName := "temp." + repo.GetFileType()
-	sTempFile := filepath.Join(sdkPath, sTempName)
 
 	Downloading(sUrl, sTempFile)
 
-	return sTempFile, nil
+	return nil
 }
 
 func Downloading(sUrl string, sTempFile string) bool {

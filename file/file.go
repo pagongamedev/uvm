@@ -1,10 +1,13 @@
 package file
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,24 +21,21 @@ func IsExist(path string) bool {
 	return false
 }
 
-func UnArchive(ziptype string, src string, dest string, isRename bool, nameOld string, nameNew string) error {
+func UnArchive(ziptype string, src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
 	switch ziptype {
 	case "zip":
-		return UnZip(src, dest, isRename, nameOld, nameNew)
-	case "tar":
-		return UnTar(src, dest, isRename, nameOld, nameNew)
+		return UnZip(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+	case "targz":
+		return UnTarGz(src, dest, isRename, isCreateFolder, nameOld, nameNew)
 	case "7z":
-		return Un7z(src, dest, isRename, nameOld, nameNew)
+		return Un7z(src, dest, isRename, isCreateFolder, nameOld, nameNew)
 	}
 	return errors.New("not match zip type")
-}
-func UnTar(src string, dest string, isRename bool, nameOld string, nameNew string) error {
-	return nil
 }
 
 // Unzip func
 // https://stackoverflow.com/questions/20357223/easy-way-to-unzip-file-with-golang
-func UnZip(src string, dest string, isRename bool, nameOld string, nameNew string) error {
+func UnZip(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return err
@@ -47,6 +47,14 @@ func UnZip(src string, dest string, isRename bool, nameOld string, nameNew strin
 	}()
 
 	os.MkdirAll(dest, 0755)
+
+	if isCreateFolder {
+		dest = filepath.Join(dest, nameNew)
+		err := os.Mkdir(dest, 0755)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extractAndWriteFile := func(f *zip.File) error {
@@ -102,7 +110,73 @@ func UnZip(src string, dest string, isRename bool, nameOld string, nameNew strin
 	return nil
 }
 
-func Un7z(src string, dest string, isRename bool, nameOld string, nameNew string) error {
+func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+	fi, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	os.MkdirAll(dest, 0755)
+
+	zipReader, err := gzip.NewReader(fi)
+	if err != nil {
+		log.Fatal("ExtractTarGz: NewReader failed")
+	}
+	defer zipReader.Close()
+
+	tarReader := tar.NewReader(zipReader)
+
+	if isCreateFolder {
+		dest = filepath.Join(dest, nameNew)
+		err := os.Mkdir(dest, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	for {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatalf("ExtractTarGz: Next() failed: %s", err.Error())
+		}
+		if isRename {
+			header.Name = strings.Replace(header.Name, nameOld, nameNew, 1)
+		}
+		path := filepath.Join(dest, header.Name)
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.Mkdir(path, 0755); err != nil {
+				log.Fatalf("ExtractTarGz: Mkdir() failed: %s", err.Error())
+			}
+		case tar.TypeReg:
+			outFile, err := os.Create(path)
+			if err != nil {
+				log.Fatalf("ExtractTarGz: Create() failed: %s", err.Error())
+			}
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				log.Fatalf("ExtractTarGz: Copy() failed: %s", err.Error())
+			}
+			outFile.Close()
+
+		default:
+			log.Fatalf(
+				"ExtractTarGz: uknown type: %b in %s",
+				header.Typeflag,
+				path)
+		}
+
+	}
+	return nil
+}
+
+func Un7z(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
 	// fmt.Println("src ", src)
 
 	// a, err := lzmadec.NewArchive(src)

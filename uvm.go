@@ -98,32 +98,40 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	switch strings.ToLower(sSDK) {
 	case "-d": // Dart
 		sd, _ = dart.NewSDK(sPlatform)
+	case "dart":
+		sd, _ = dart.NewSDK(sPlatform)
 	case "-f": // Flutter
+		sd, _ = flutter.NewSDK(sPlatform)
+	case "flutter":
 		sd, _ = flutter.NewSDK(sPlatform)
 	case "-g": // Golang
 		sd, _ = golang.NewSDK(sPlatform)
+	case "golang":
+		sd, _ = golang.NewSDK(sPlatform)
 	case "-j": // Java
+		sd, _ = java.NewSDK(sPlatform)
+	case "java":
 		sd, _ = java.NewSDK(sPlatform)
 	case "-n": // NodeJS
 		sd, _ = nodejs.NewSDK(sPlatform)
+	case "nodejs":
+		sd, _ = nodejs.NewSDK(sPlatform)
 	case "-oj": // OpenJava
+		sd, _ = openjava.NewSDK(sPlatform)
+	case "openjava":
 		sd, _ = openjava.NewSDK(sPlatform)
 	case "-p": // Python
 		sd, _ = python.NewSDK(sPlatform)
+	case "python":
+		sd, _ = python.NewSDK(sPlatform)
 	case "-r": // Ruby
 		sd, _ = ruby.NewSDK(sPlatform)
+	case "ruby":
+		sd, _ = ruby.NewSDK(sPlatform)
 	case "list":
-		fmt.Println(printSDKWithPaddingSpace("uvm", "v"+UVMVersion, ""))
-		printVersionQuick(dart.NewSDK, sPlatform)
-		printVersionQuick(flutter.NewSDK, sPlatform)
-		printVersionQuick(golang.NewSDK, sPlatform)
-		printVersionQuick(java.NewSDK, sPlatform)
-		printVersionQuick(nodejs.NewSDK, sPlatform)
-		printVersionQuick(openjava.NewSDK, sPlatform)
-		printVersionQuick(python.NewSDK, sPlatform)
-		printVersionQuick(ruby.NewSDK, sPlatform)
-
-		os.Exit(1)
+		printAllList(sPlatform)
+	case "ls":
+		printAllList(sPlatform)
 	}
 
 	if sd == nil {
@@ -132,6 +140,19 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	}
 
 	return sd, nil
+}
+
+func printAllList(sPlatform string) {
+	fmt.Println(printSDKWithPaddingSpace("uvm", "v"+UVMVersion, ""))
+	printVersionQuick(dart.NewSDK, sPlatform)
+	printVersionQuick(flutter.NewSDK, sPlatform)
+	printVersionQuick(golang.NewSDK, sPlatform)
+	printVersionQuick(java.NewSDK, sPlatform)
+	printVersionQuick(nodejs.NewSDK, sPlatform)
+	printVersionQuick(openjava.NewSDK, sPlatform)
+	printVersionQuick(python.NewSDK, sPlatform)
+	printVersionQuick(ruby.NewSDK, sPlatform)
+	os.Exit(1)
 }
 
 func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 string, rootPath string, sPlatform string, sArch string) {
@@ -250,7 +271,7 @@ func getSDKCurrentVersion(sd sdk.SDK, sPlatform string) (string, string, string)
 
 func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath string, sPlatform string, sArch string) {
 	sVersion = helper.GetVersionWithV(sVersion)
-	sdkPath := filepath.Join(rootPath, sd.GetName())
+	sdkPath := filepath.Join(rootPath, strings.ToLower(sd.GetName()))
 	if !file.IsExist(sdkPath) {
 		os.Mkdir(sdkPath, os.ModeDir)
 	}
@@ -262,7 +283,8 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 
 		fmt.Printf("\nFailed Install : %v not supported cli download\n", sd.GetName())
 		fmt.Printf("\nplease download archive at :" + sd.GetLinkPage() + "\n")
-		fmt.Printf("and install at : " + sdkPath + "\\{{v0.0.0}}\\\n\n")
+
+		fmt.Printf("and install at : " + filepath.Join(sdkPath, "{{v0.0.0}}") + "\n\n")
 		return
 	}
 
@@ -274,14 +296,17 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 	if !file.IsExist(sSDKPathVersion) {
 		sUrl, sFileName, sZipFolderName := setUrl(sd, sVersion, sTag, sKey, sPlatform, sArch)
 
-		sTempFile, err := download.Loading(sd, rootPath, sdkPath, sUrl, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
+		sTempName := "temp." + sd.GetFileType()
+		sTempFile := filepath.Join(sdkPath, sTempName)
+
+		err := download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 		if err != nil {
 			printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
 			return
 		}
 
 		// unzip
-		err = file.UnArchive(sd.GetArchiveType(), sTempFile, sdkPath, sd.GetIsRenameFolder(), sZipFolderName, sFolderVersion)
+		err = file.UnArchive(sd.GetArchiveType(), sTempFile, sdkPath, sd.GetIsRenameFolder(), sd.GetIsCreateFolder(), sZipFolderName, sFolderVersion)
 		if err != nil {
 			fmt.Println("Unzip Error ", err)
 			return
@@ -320,7 +345,7 @@ func uninstall(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatf
 	}
 
 	// fmt.Println(sCurrentVersion, " == ", sVersion, " && ", sCurrentTag, " == ", sTag)
-	sdkPath := filepath.Join(rootPath, sd.GetName())
+	sdkPath := filepath.Join(rootPath, strings.ToLower(sd.GetName()))
 	_, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if file.IsExist(sSDKPathVersion) {
@@ -345,7 +370,7 @@ func list(sd sdk.SDK, rootPath string, sPlatform string) {
 	sPre := ""
 	sPost := ""
 
-	sdkPath := filepath.Join(rootPath, sd.GetName())
+	sdkPath := filepath.Join(rootPath, strings.ToLower(sd.GetName()))
 
 	// versionList := []string{}
 	reg, _ := regexp.Compile("v")
@@ -379,7 +404,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 	// create symlink
 	sVersion = helper.GetVersionWithV(sVersion)
 
-	sdkPath := filepath.Join(rootPath, sd.GetName())
+	sdkPath := filepath.Join(rootPath, strings.ToLower(sd.GetName()))
 	_, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
@@ -389,9 +414,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 
 	switch sPlatform {
 	case "windows":
-
 		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
-
 		// create symlink
 		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
 			filepath.Join(rootPath, "bin", "elevate.cmd"),
@@ -399,22 +422,31 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 			sSDKPathVersion)) {
 			return
 		}
-
-		// err := os.Symlink(symPath, sSDKPathVersion)
-		// if err != nil {
-		// 	fmt.Println("Symlink Error ", err)
-		// 	return
-		// }
-
-		fmt.Printf("create symlink\n\n")
+	case "darwin":
+		symPath := filepath.Join(InstallPathDarwin, ConvertLinkName(sd.GetLinkName()))
+		err := os.Symlink(sSDKPathVersion, symPath)
+		if err != nil {
+			fmt.Println("Symlink Error ", err)
+			return
+		}
+	case "linux":
+		symPath := filepath.Join(InstallPathLinux, ConvertLinkName(sd.GetLinkName()))
+		err := os.Symlink(sSDKPathVersion, symPath)
+		if err != nil {
+			fmt.Println("Symlink Error ", err)
+			return
+		}
 	}
+
+	fmt.Printf("create symlink\n\n")
 	fmt.Printf("use %v %v %v\n\n", sd.GetName(), sVersion, sTag)
 
 	// check env
+	isUpdateEnv := false
+
 	switch sPlatform {
 	case "windows":
-		// sheck sd env
-		isUpdateEnv := false
+		// check sd env
 		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 
 		uvmlink, ok := os.LookupEnv(ENVUVMLink)
@@ -493,7 +525,6 @@ func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 	switch sPlatform {
 	case "windows":
 		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
-
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
 		if sym != nil {
@@ -503,7 +534,28 @@ func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 				return
 			}
 		}
-
+	case "darwin":
+		symPath := filepath.Join(InstallPathDarwin, ConvertLinkName(sd.GetLinkName()))
+		// remove symlink if it already exists
+		sym, _ := os.Stat(symPath)
+		if sym != nil {
+			err := os.Remove(symPath)
+			if err != nil {
+				fmt.Println("Symlink Remove Error ", err)
+				return
+			}
+		}
+	case "linux":
+		symPath := filepath.Join(InstallPathLinux, ConvertLinkName(sd.GetLinkName()))
+		// remove symlink if it already exists
+		sym, _ := os.Stat(symPath)
+		if sym != nil {
+			err := os.Remove(symPath)
+			if err != nil {
+				fmt.Println("Symlink Remove Error ", err)
+				return
+			}
+		}
 	}
 }
 
@@ -547,15 +599,15 @@ func printHelp() {
 	fmt.Println("\nOS : " + runtime.GOOS + " Arch : " + runtime.GOARCH + ".")
 
 	fmt.Println("\nSupport:")
-	fmt.Println("                                |     Window     |     Darwin     |     Linux")
-	fmt.Println("  uvm -d            : Dart           Suported")
-	fmt.Println("  uvm -f            : Flutter        Suported")
-	fmt.Println("  uvm -g            : Golang         Suported")
-	fmt.Println("  uvm -j            : Java         [Manual Ins.]")
-	fmt.Println("  uvm -n            : NodeJS          Suported")
-	fmt.Println("  uvm -oj           : OpenJava       [Use Key]")
-	fmt.Println("  uvm -p            : Python       [Manual Ins.]")
-	fmt.Println("  uvm -r            : Ruby         [Manual Ins.]")
+	fmt.Println("                                        |     Window     |     Darwin     |     Linux")
+	fmt.Println("  uvm -d  , uvm dart        : Dart           Suported")
+	fmt.Println("  uvm -f  , uvm flutter     : Flutter        Suported")
+	fmt.Println("  uvm -go , uvm golang      : Golang         Suported")
+	fmt.Println("  uvm -j  , uvm java        : Java         [Manual Ins.]")
+	fmt.Println("  uvm -n  , uvm nodejs      : NodeJS          Suported")
+	fmt.Println("  uvm -oj , uvm openjava    : OpenJava       [Use Key]")
+	fmt.Println("  uvm -p  , uvm python      : Python       [Manual Ins.]")
+	fmt.Println("  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
 	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")

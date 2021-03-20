@@ -12,13 +12,13 @@ func NewProviderJavaNet(sPlatform string) (sdk.Provider, error) {
 		archiveType = "zip"
 	case "darwin":
 		fileType = "tar.gz"
-		archiveType = "tar"
+		archiveType = "targz"
 	case "linux":
 		fileType = "tar.gz"
-		archiveType = "tar"
+		archiveType = "targz"
 	default:
 		fileType = "tar.gz"
-		archiveType = "tar"
+		archiveType = "targz"
 	}
 
 	// ==================================

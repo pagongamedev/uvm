@@ -21,8 +21,11 @@
 
 #Exe
 uvm
+luvm
+duvm
 
 #SDK Path
+Git/
 NodeJS/
 Flutter/
 Golang/

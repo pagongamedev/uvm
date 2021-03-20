@@ -38,19 +38,21 @@ Manage multiple installations of sdk on a Windows computer.
 
   - ! Not Recommend Installation In "Program File" , "Program Data" , "AppData" Because Losting When Formatted Windows and Consumed Space In your SSD Drive
 
-2. Append "D:\SDK\uvm" and "%UVM_LINK%" to ENV:"Path" in System Variables
+2. Append "%UVM_LINK%" and "D:\SDK\uvm" to ENV:"Path" in System Variables
+
+- ENV:"UVM_LINK"
+ 
+  ```
+  C:\Program Files\uvm_nodejs;C:\Program Files\uvm_flutter\bin;C:\Program Files\uvm_golang\bin;C:\Program Files\uvm_dart\bin;C:\Program Files\uvm_java\bin;C:\Program Files\uvm_python;C:\Program Files\uvm_ruby\bin;
+  ```
+
 - ENV:"Path"
 
   ```
-  D:\SDK\uvm
+  {{path}};%UVM_LINK%;D:\SDK\uvm
   ```
-  ```
-  %UVM_LINK%
-  ```
-    
 
-
-2. open shell like CMD or Powershell with Administrator Mode (Use for Creak SymLink)
+1. open shell like CMD or Powershell with Administrator Mode (Use for Creak SymLink)
    and run this command for using
    
    ```
@@ -61,26 +63,7 @@ Manage multiple installations of sdk on a Windows computer.
 
 <b> Optional </b>
 
-  For Quick Step for not more time for restart shell when ENV Update Please Create This
-
-1. Create UVM_LINK in System Variables
-  
-
-- ENV : "UVM_LINK"
- 
-  ```
-  C:\Program Files\uvm_nodejs;C:\Program Files\uvm_flutter\bin;C:\Program Files\uvm_golang\bin;C:\Program Files\uvm_dart\bin;C:\Program Files\uvm_java\bin;C:\Program Files\uvm_python;C:\Program Files\uvm_ruby\bin;
-  ```
-
-2. Create UVM_JAVA_CHANNEL in System Variables
-
-- ENV : "UVM_JAVA_CHANNEL"
- 
-  ```
-  Java
-  ```
-
-3. Delete or Create JAVA_HOME 
+1. Delete or Create JAVA_HOME 
 
 - ENV : "JAVA_HOME"
  
@@ -92,3 +75,25 @@ Manage multiple installations of sdk on a Windows computer.
 ## MacOS
 
 ## Linux
+1. Extract Installer Zip to folder
+
+  ```
+  /usr/local/uvm/
+  ```
+
+2. Create uvm.sh in /etc/profile.d
+  
+- "/etc/profile.d/uvm.sh"
+ 
+  ```
+  export UVM_LINK=/usr/local/uvm_nodejs:/usr/local/uvm_flutter/bin:/usr/local/uvm_golang/bin:/usr/local/uvm_dart/bin:/usr/local/uvm_java/bin:/usr/local/uvm_python:/usr/local/uvm_ruby/bin
+  export PATH=$PATH:$UVM_LINK:/usr/local/uvm
+  ```
+
+3. open shell like CMD or Powershell with Administrator Mode (Use for Creak SymLink)
+   and run this command for using
+   
+   ```
+   $ uvm list
+   $ uvm 
+   ```

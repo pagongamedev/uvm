@@ -22,7 +22,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 	return &sdk.SDK{
 		Name:       "Golang",
 		LinkName:   "Golang",
-		Command:    "-g",
+		Command:    "-go",
 		Env:        "",
 		EnvBin:     "bin",
 		EnvChannel: "",
