@@ -15,7 +15,7 @@ func NewProviderFlutterDev(sPlatform string) (sdk.Provider, error) {
 		archiveType = "zip"
 	case "linux":
 		fileType = "tar.xz"
-		archiveType = "tar"
+		archiveType = "tarxz"
 	default:
 		fileType = "zip"
 		archiveType = "zip"

@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/xi2/xz"
 )
 
 func IsExist(path string) bool {
@@ -27,6 +29,8 @@ func UnArchive(ziptype string, src string, dest string, isRename bool, isCreateF
 		return UnZip(src, dest, isRename, isCreateFolder, nameOld, nameNew)
 	case "targz":
 		return UnTarGz(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+	case "tarxz":
+		return UnTarXz(src, dest, isRename, isCreateFolder, nameOld, nameNew)
 	case "7z":
 		return Un7z(src, dest, isRename, isCreateFolder, nameOld, nameNew)
 	}
@@ -125,13 +129,38 @@ func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 	}
 	defer zipReader.Close()
 
-	tarReader := tar.NewReader(zipReader)
+	extractTar(zipReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+
+	return nil
+}
+
+func UnTarXz(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+	fi, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	os.MkdirAll(dest, 0755)
+
+	xzReader, err := xz.NewReader(fi, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	extractTar(xzReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+
+	return nil
+}
+
+func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) {
+	tarReader := tar.NewReader(r)
 
 	if isCreateFolder {
 		dest = filepath.Join(dest, nameNew)
 		err := os.Mkdir(dest, 0755)
 		if err != nil {
-			return err
+			log.Fatalf("Create folder failed: %s", err.Error())
 		}
 	}
 
@@ -173,7 +202,6 @@ func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 		}
 
 	}
-	return nil
 }
 
 func Un7z(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {

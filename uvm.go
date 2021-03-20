@@ -31,9 +31,13 @@ const (
 )
 
 const (
-	InstallPathWindow = "C:\\Program Files"
-	InstallPathLinux  = "/usr/local/"
-	InstallPathDarwin = "/usr/local/"
+	InstallPathWindows = "C:\\Program Files"
+	InstallPathLinux   = "/usr/local/"
+	InstallPathDarwin  = "/usr/local/"
+)
+
+const (
+	FileJsonChannel = "channel.json"
 )
 
 func main() {
@@ -96,42 +100,25 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	var sd *sdk.SDK
 	var err error
 	switch strings.ToLower(sSDK) {
-	case "-d": // Dart
+	case "-d", "dart": // Dart
 		sd, _ = dart.NewSDK(sPlatform)
-	case "dart":
-		sd, _ = dart.NewSDK(sPlatform)
-	case "-f": // Flutter
+	case "-f", "flutter": // Flutter
 		sd, _ = flutter.NewSDK(sPlatform)
-	case "flutter":
-		sd, _ = flutter.NewSDK(sPlatform)
-	case "-g": // Golang
+	case "-g", "golang": // Golang
 		sd, _ = golang.NewSDK(sPlatform)
-	case "golang":
-		sd, _ = golang.NewSDK(sPlatform)
-	case "-j": // Java
+	case "-j", "java": // Java
 		sd, _ = java.NewSDK(sPlatform)
-	case "java":
-		sd, _ = java.NewSDK(sPlatform)
-	case "-n": // NodeJS
+	case "-n", "nodejs": // NodeJS
 		sd, _ = nodejs.NewSDK(sPlatform)
-	case "nodejs":
-		sd, _ = nodejs.NewSDK(sPlatform)
-	case "-oj": // OpenJava
+	case "-oj", "openjava": // OpenJava
 		sd, _ = openjava.NewSDK(sPlatform)
-	case "openjava":
-		sd, _ = openjava.NewSDK(sPlatform)
-	case "-p": // Python
+	case "-p", "python": // Python
 		sd, _ = python.NewSDK(sPlatform)
-	case "python":
-		sd, _ = python.NewSDK(sPlatform)
-	case "-r": // Ruby
+	case "-r", "ruby": // Ruby
 		sd, _ = ruby.NewSDK(sPlatform)
-	case "ruby":
-		sd, _ = ruby.NewSDK(sPlatform)
-	case "list":
+	case "list", "ls":
 		printAllList(sPlatform)
-	case "ls":
-		printAllList(sPlatform)
+
 	}
 
 	if sd == nil {
@@ -143,7 +130,7 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 }
 
 func printAllList(sPlatform string) {
-	fmt.Println(printSDKWithPaddingSpace("uvm", "v"+UVMVersion, ""))
+	fmt.Println(printSDKWithPaddingSpace("UVM", "v"+UVMVersion, ""))
 	printVersionQuick(dart.NewSDK, sPlatform)
 	printVersionQuick(flutter.NewSDK, sPlatform)
 	printVersionQuick(golang.NewSDK, sPlatform)
@@ -163,17 +150,13 @@ func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 s
 		uninstall(sd, data1, data2, rootPath, sPlatform)
 	case "use":
 		use(sd, data1, data2, rootPath, sPlatform)
-	case "list":
-		list(sd, rootPath, sPlatform)
-	case "ls":
+	case "ls", "list":
 		list(sd, rootPath, sPlatform)
 	case "unuse":
 		unuse(sd, rootPath, sPlatform)
 	case "root":
 		fmt.Println("current root: " + rootPath)
-	case "version":
-		fmt.Println(UVMTagVersion)
-	case "v":
+	case "v", "version":
 		fmt.Println(UVMTagVersion)
 	default:
 		printHelp()
@@ -251,15 +234,11 @@ func getSDKCurrentVersion(sd sdk.SDK, sPlatform string) (string, string, string)
 		}
 
 	}
+	symPath := getSymPath(sd, sPlatform)
+
 	// Search Version
-	switch sPlatform {
-	case "windows":
-		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
-		linkPath, err = os.Readlink(symPath)
-
-	}
-
-	if err != nil {
+	linkPath, err = os.Readlink(symPath)
+	if linkPath == "" || err != nil {
 		return "", "", ""
 	}
 
@@ -411,10 +390,9 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 		fmt.Println("error : not have installed :", sd.GetName(), sVersion, sTag)
 		return
 	}
-
+	symPath := getSymPath(sd, sPlatform)
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 		// create symlink
 		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C mklink /D "%s" "%s"`,
 			filepath.Join(rootPath, "bin", "elevate.cmd"),
@@ -422,15 +400,7 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 			sSDKPathVersion)) {
 			return
 		}
-	case "darwin":
-		symPath := filepath.Join(InstallPathDarwin, ConvertLinkName(sd.GetLinkName()))
-		err := os.Symlink(sSDKPathVersion, symPath)
-		if err != nil {
-			fmt.Println("Symlink Error ", err)
-			return
-		}
-	case "linux":
-		symPath := filepath.Join(InstallPathLinux, ConvertLinkName(sd.GetLinkName()))
+	case "darwin", "linux":
 		err := os.Symlink(sSDKPathVersion, symPath)
 		if err != nil {
 			fmt.Println("Symlink Error ", err)
@@ -444,75 +414,89 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 	// check env
 	isUpdateEnv := false
 
-	switch sPlatform {
-	case "windows":
-		// check sd env
-		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
+	// check UVMLink Env
+	uvmlinkData, ok := os.LookupEnv(ENVUVMLink)
+	if !ok || !strings.Contains(uvmlinkData, symPath) {
+		CheckOrCreateEnv(sd, true, sPlatform, ENVUVMLink, uvmlinkData, rootPath, symPath)
+		isUpdateEnv = true
+	}
 
-		uvmlink, ok := os.LookupEnv(ENVUVMLink)
-		if !ok {
-			createEnvUVMLink(sd, uvmlink, rootPath, symPath)
+	// Set Env
+	if sd.GetEnv() != "" {
+		uvmSDKData, ok := os.LookupEnv(sd.GetEnv())
+		if !ok || !strings.Contains(uvmSDKData, symPath) {
 			isUpdateEnv = true
-		} else {
-			if !strings.Contains(uvmlink, symPath) {
-				createEnvUVMLink(sd, uvmlink, rootPath, symPath)
-				isUpdateEnv = true
+		}
+
+		CheckOrCreateEnv(sd, false, sPlatform, sd.GetEnv(), uvmSDKData, rootPath, symPath)
+	}
+
+	// Set Env Channel
+	jsonChannelFilePath := filepath.Clean(filepath.Join(rootPath, FileJsonChannel))
+
+	if sd.GetEnvChannel() != "" {
+		channelDataList := file.ReadJSONFile(jsonChannelFilePath)
+		sdkChannelData := channelDataList[sd.GetEnvChannel()]
+
+		isSameSDK := false
+		if sdkChannelData != nil {
+			if sdkChannelData.(string) == sd.GetName() {
+				isSameSDK = true
 			}
 		}
 
-		// Set Env
-		if sd.GetEnv() != "" {
-			_, ok := os.LookupEnv(sd.GetEnv())
-			if !ok {
-				isUpdateEnv = true
-			}
-
-			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
-				filepath.Join(rootPath, "bin", "elevate.cmd"),
-				sd.GetEnv(),
-				filepath.Clean(filepath.Join(symPath, sd.GetEnvBin())))) {
-				return
-			}
+		if !isSameSDK {
+			channelDataList[sd.GetEnvChannel()] = sd.GetName()
+			file.WriteJSONFile(jsonChannelFilePath, channelDataList)
 		}
+	}
 
-		// Set Env Channel
-		if sd.GetEnvChannel() != "" {
-			_, ok := os.LookupEnv(sd.GetEnvChannel())
-			if !ok {
-				isUpdateEnv = true
-			}
-
-			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
-				filepath.Join(rootPath, "bin", "elevate.cmd"),
-				sd.GetEnvChannel(),
-				sd.GetName())) {
-				return
-			}
-		}
-
-		if isUpdateEnv {
+	if isUpdateEnv {
+		switch sPlatform {
+		case "windows":
 			fmt.Println("env updated please restart shell")
-		} else {
-			// Check uvmlink in path
-			path := os.Getenv("path")
-			if !strings.Contains(path, symPath) {
+		case "darwin", "linux":
+		}
+	} else {
+		// Check uvmlink in path
+		path := os.Getenv("path")
+		if !strings.Contains(path, symPath) {
+			switch sPlatform {
+			case "windows":
 				fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
+			case "darwin", "linux":
+				fmt.Println("Please Append \"" + ENVUVMLink + "\"")
+				fmt.Println("In \"/etc/profile.d/uvm.sh\" at export PATH")
 			}
+
 		}
 	}
 }
-func createEnvUVMLink(sd sdk.SDK, uvmlink string, rootPath string, symPath string) {
+func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName string, envData string, rootPath string, symPath string) {
 
-	sPre := ""
-	if uvmlink != "" {
-		sPre = ";"
-	}
+	symPathBin := filepath.Clean(filepath.Join(symPath, sd.GetEnvBin()))
 
-	if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
-		filepath.Join(rootPath, "bin", "elevate.cmd"),
-		ENVUVMLink,
-		uvmlink+sPre+filepath.Clean(filepath.Join(symPath, sd.GetEnvBin())))) {
-		return
+	switch sPlatform {
+	case "windows":
+		sPre := ""
+		if envData != "" && isAppend {
+			sPre = envData + ";"
+		}
+		if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C SETX /M "%s" "%s"`,
+			filepath.Join(rootPath, "bin", "elevate.cmd"),
+			envName,
+			sPre+symPathBin)) {
+			return
+		}
+	case "darwin", "linux":
+		strAdd := "Add"
+		if isAppend {
+			strAdd = "Append"
+		}
+
+		fmt.Println("Env:" + envName + " Not Found.")
+		fmt.Println("Please " + strAdd + " \"" + symPathBin + "\"")
+		fmt.Println("In \"/etc/profile.d/uvm.sh\" at export " + envName)
 	}
 }
 
@@ -522,9 +506,9 @@ func unuse(sd sdk.SDK, rootPath string, sPlatform string) {
 }
 
 func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
+	symPath := getSymPath(sd, sPlatform)
 	switch sPlatform {
 	case "windows":
-		symPath := filepath.Join(InstallPathWindow, ConvertLinkName(sd.GetLinkName()))
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
 		if sym != nil {
@@ -534,19 +518,7 @@ func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 				return
 			}
 		}
-	case "darwin":
-		symPath := filepath.Join(InstallPathDarwin, ConvertLinkName(sd.GetLinkName()))
-		// remove symlink if it already exists
-		sym, _ := os.Stat(symPath)
-		if sym != nil {
-			err := os.Remove(symPath)
-			if err != nil {
-				fmt.Println("Symlink Remove Error ", err)
-				return
-			}
-		}
-	case "linux":
-		symPath := filepath.Join(InstallPathLinux, ConvertLinkName(sd.GetLinkName()))
+	case "darwin", "linux":
 		// remove symlink if it already exists
 		sym, _ := os.Stat(symPath)
 		if sym != nil {
@@ -565,6 +537,20 @@ func ConvertLinkName(sName string) string {
 
 func printSDKWithPaddingSpace(sName string, sVersion string, sTag string) string {
 	return paddingSpace(sName, 10) + ": " + sVersion + " " + sTag
+}
+
+func getSymPath(sd sdk.SDK, sPlatform string) string {
+	symPath := ""
+	switch sPlatform {
+	case "windows":
+		symPath = filepath.Join(InstallPathWindows, ConvertLinkName(sd.GetLinkName()))
+	case "darwin":
+		symPath = filepath.Join(InstallPathDarwin, ConvertLinkName(sd.GetLinkName()))
+	case "linux":
+		symPath = filepath.Join(InstallPathLinux, ConvertLinkName(sd.GetLinkName()))
+	}
+
+	return symPath
 }
 
 // =====================================================================
