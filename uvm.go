@@ -71,16 +71,16 @@ func main() {
 		data3 = argList[5]
 	}
 
-	rootsPath, err := os.Executable()
+	sRootPath, err := os.Executable()
 	MustError(err)
-	rootsPath = filepath.Dir(rootsPath)
+	sRootPath = filepath.Dir(sRootPath)
 
-	sd, err := GetSDK(argList[1], sPlatform)
+	sd, err := GetSDK(argList[1], sRootPath, sPlatform)
 	MustError(err)
 
 	// check version by use
 	if argList[2] == "use" && data1 == "" && data2 == "" {
-		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sPlatform)
+		basePath, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sRootPath, sPlatform)
 		if basePath != "" {
 			fmt.Println(sCurrentVersion, sCurrentTag)
 		} else {
@@ -92,11 +92,11 @@ func main() {
 	// ================
 	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", sd.GetName(), sPlatform, sArch)
 
-	RunCommand(argList[2], *sd, data1, data2, data3, rootsPath, sPlatform, sArch)
+	RunCommand(argList[2], *sd, data1, data2, data3, sRootPath, sPlatform, sArch)
 
 }
 
-func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
+func GetSDK(sSDK string, sRootPath string, sPlatform string) (*sdk.SDK, error) {
 	var sd *sdk.SDK
 	var err error
 	switch strings.ToLower(sSDK) {
@@ -117,7 +117,7 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	case "-r", "ruby": // Ruby
 		sd, _ = ruby.NewSDK(sPlatform)
 	case "list", "ls":
-		printAllList(sPlatform)
+		printAllList(sRootPath, sPlatform)
 
 	}
 
@@ -129,33 +129,33 @@ func GetSDK(sSDK string, sPlatform string) (*sdk.SDK, error) {
 	return sd, nil
 }
 
-func printAllList(sPlatform string) {
+func printAllList(sRootPath string, sPlatform string) {
 	fmt.Println(printSDKWithPaddingSpace("UVM", "v"+UVMVersion, ""))
-	printVersionQuick(dart.NewSDK, sPlatform)
-	printVersionQuick(flutter.NewSDK, sPlatform)
-	printVersionQuick(golang.NewSDK, sPlatform)
-	printVersionQuick(java.NewSDK, sPlatform)
-	printVersionQuick(nodejs.NewSDK, sPlatform)
-	printVersionQuick(openjava.NewSDK, sPlatform)
-	printVersionQuick(python.NewSDK, sPlatform)
-	printVersionQuick(ruby.NewSDK, sPlatform)
+	printVersionQuick(dart.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(flutter.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(golang.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(java.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(nodejs.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(openjava.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(python.NewSDK, sRootPath, sPlatform)
+	printVersionQuick(ruby.NewSDK, sRootPath, sPlatform)
 	os.Exit(1)
 }
 
-func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 string, rootPath string, sPlatform string, sArch string) {
+func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 string, sRootPath string, sPlatform string, sArch string) {
 	switch sCommand {
 	case "install":
-		install(sd, data1, data2, data3, rootPath, sPlatform, sArch)
+		install(sd, data1, data2, data3, sRootPath, sPlatform, sArch)
 	case "uninstall":
-		uninstall(sd, data1, data2, rootPath, sPlatform)
+		uninstall(sd, data1, data2, sRootPath, sPlatform)
 	case "use":
-		use(sd, data1, data2, rootPath, sPlatform)
+		use(sd, data1, data2, sRootPath, sPlatform)
 	case "ls", "list":
-		list(sd, rootPath, sPlatform)
+		list(sd, sRootPath, sPlatform)
 	case "unuse":
-		unuse(sd, rootPath, sPlatform)
+		unuse(sd, sRootPath, sPlatform)
 	case "root":
-		fmt.Println("current root: " + rootPath)
+		fmt.Println("current root: " + sRootPath)
 	case "v", "version":
 		fmt.Println(UVMTagVersion)
 	default:
@@ -163,9 +163,9 @@ func RunCommand(sCommand string, sd sdk.SDK, data1 string, data2 string, data3 s
 	}
 }
 
-func printVersionQuick(sdFunc func(string) (*sdk.SDK, error), sPlatform string) {
+func printVersionQuick(sdFunc func(string) (*sdk.SDK, error), sRootPath string, sPlatform string) {
 	sd, _ := sdFunc(sPlatform)
-	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sPlatform)
+	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(*sd, sRootPath, sPlatform)
 	fmt.Println(printSDKWithPaddingSpace(sd.GetName(), sCurrentVersion, sCurrentTag))
 }
 
@@ -223,13 +223,14 @@ func setUrl(sd sdk.SDK, sVersion string, sTag string, sKey string, sPlatform str
 	return sUrl, sFileName, sZipFolderName
 }
 
-func getSDKCurrentVersion(sd sdk.SDK, sPlatform string) (string, string, string) {
+func getSDKCurrentVersion(sd sdk.SDK, rootPath string, sPlatform string) (string, string, string) {
 	linkPath := ""
 	var err error
 
 	if sd.GetEnvChannel() != "" {
-		envChannel, _ := os.LookupEnv(sd.GetEnvChannel())
-		if envChannel != sd.GetName() {
+		jsonChannelFilePath := filepath.Clean(filepath.Join(rootPath, FileJsonChannel))
+		isSameSDK, _ := ReadEnvChannel(sd, jsonChannelFilePath)
+		if !isSameSDK {
 			return "", "", ""
 		}
 
@@ -317,7 +318,7 @@ func uninstall(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatf
 	}
 
 	// check current use and remove symlink when use
-	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(sd, sPlatform)
+	_, sCurrentVersion, sCurrentTag := getSDKCurrentVersion(sd, rootPath, sPlatform)
 
 	if sCurrentVersion == sVersion && sCurrentTag == sTag {
 		unuse(sd, rootPath, sPlatform)
@@ -342,14 +343,14 @@ func uninstall(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatf
 	}
 }
 
-func list(sd sdk.SDK, rootPath string, sPlatform string) {
+func list(sd sdk.SDK, sRootPath string, sPlatform string) {
 
-	baseFile, _, _ := getSDKCurrentVersion(sd, sPlatform)
+	baseFile, _, _ := getSDKCurrentVersion(sd, sRootPath, sPlatform)
 
 	sPre := ""
 	sPost := ""
 
-	sdkPath := filepath.Join(rootPath, strings.ToLower(sd.GetName()))
+	sdkPath := filepath.Join(sRootPath, strings.ToLower(sd.GetName()))
 
 	// versionList := []string{}
 	reg, _ := regexp.Compile("v")
@@ -433,22 +434,10 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 
 	// Set Env Channel
 	jsonChannelFilePath := filepath.Clean(filepath.Join(rootPath, FileJsonChannel))
-
-	if sd.GetEnvChannel() != "" {
-		channelDataList := file.ReadJSONFile(jsonChannelFilePath)
-		sdkChannelData := channelDataList[sd.GetEnvChannel()]
-
-		isSameSDK := false
-		if sdkChannelData != nil {
-			if sdkChannelData.(string) == sd.GetName() {
-				isSameSDK = true
-			}
-		}
-
-		if !isSameSDK {
-			channelDataList[sd.GetEnvChannel()] = sd.GetName()
-			file.WriteJSONFile(jsonChannelFilePath, channelDataList)
-		}
+	isSameSDK, channelDataList := ReadEnvChannel(sd, jsonChannelFilePath)
+	if !isSameSDK {
+		channelDataList[sd.GetEnvChannel()] = sd.GetName()
+		file.WriteJSONFile(jsonChannelFilePath, channelDataList)
 	}
 
 	if isUpdateEnv {
@@ -471,6 +460,22 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 
 		}
 	}
+}
+
+func ReadEnvChannel(sd sdk.SDK, jsonChannelFilePath string) (bool, map[string]interface{}) {
+	channelDataList := map[string]interface{}{}
+	isSameSDK := false
+	if sd.GetEnvChannel() != "" {
+		channelDataList := file.ReadJSONFile(jsonChannelFilePath)
+		sdkChannelData := channelDataList[sd.GetEnvChannel()]
+
+		if sdkChannelData != nil {
+			if sdkChannelData.(string) == sd.GetName() {
+				isSameSDK = true
+			}
+		}
+	}
+	return isSameSDK, channelDataList
 }
 func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName string, envData string, rootPath string, symPath string) {
 
