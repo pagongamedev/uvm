@@ -129,7 +129,10 @@ func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 	}
 	defer zipReader.Close()
 
-	extractTar(zipReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	err = extractTar(zipReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -145,25 +148,33 @@ func UnTarXz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 
 	xzReader, err := xz.NewReader(fi, 0)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	extractTar(xzReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	err = extractTar(xzReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) {
+// type symlinkPath struct {
+// 	path   string
+// 	target string
+// }
+
+func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
 	tarReader := tar.NewReader(r)
 
 	if isCreateFolder {
 		dest = filepath.Join(dest, nameNew)
 		err := os.Mkdir(dest, 0755)
 		if err != nil {
-			log.Fatalf("Create folder failed: %s", err.Error())
+			return errors.New("Create folder failed : " + err.Error())
 		}
 	}
-
+	// symlinkPathList := []symlinkPath{}
 	for {
 		header, err := tarReader.Next()
 
@@ -172,7 +183,7 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 		}
 
 		if err != nil {
-			log.Fatalf("ExtractTarGz: Next() failed: %s", err.Error())
+			return errors.New("ExtractTarGz: Next() failed : " + err.Error())
 		}
 		if isRename {
 			header.Name = strings.Replace(header.Name, nameOld, nameNew, 1)
@@ -182,26 +193,42 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.Mkdir(path, 0755); err != nil {
-				log.Fatalf("ExtractTarGz: Mkdir() failed: %s", err.Error())
+				return errors.New("ExtractTarGz: Mkdir() failed : " + err.Error())
 			}
 		case tar.TypeReg:
 			outFile, err := os.Create(path)
 			if err != nil {
-				log.Fatalf("ExtractTarGz: Create() failed: %s", err.Error())
+				return errors.New("ExtractTarGz: Create() failed : " + err.Error())
 			}
 			if _, err := io.Copy(outFile, tarReader); err != nil {
-				log.Fatalf("ExtractTarGz: Copy() failed: %s", err.Error())
+				return errors.New("ExtractTarGz: Copy() failed : " + err.Error())
 			}
 			outFile.Close()
+		case tar.TypeSymlink:
+			destPath := dest
+			if isRename {
+				destPath = filepath.Join(dest, nameNew)
+			}
+			target := filepath.Clean(filepath.Join(destPath, header.Linkname))
+			// for _, symlink := range symlinkPathList {
 
+			// For Node Js
+			target = strings.Trim(target, ".js")
+			err := os.Symlink(target, path)
+			if err != nil {
+				return fmt.Errorf("symlink error %v", err.Error())
+			}
+			// }
+			// symlinkPathList = append(symlinkPathList, symlinkPath{path: path, target: target})
 		default:
-			log.Fatalf(
+			return fmt.Errorf(
 				"ExtractTarGz: uknown type: %b in %s",
 				header.Typeflag,
 				path)
 		}
-
 	}
+
+	return nil
 }
 
 func Un7z(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {

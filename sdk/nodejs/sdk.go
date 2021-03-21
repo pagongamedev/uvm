@@ -6,13 +6,16 @@ import (
 
 func NewSDK(sPlatform string) (*sdk.SDK, error) {
 	var provider sdk.Provider
+	envBin := ""
 	switch sPlatform {
 	case "windows":
 		provider, _ = NewProviderNodejsOrg(sPlatform)
 	case "darwin":
 		provider, _ = NewProviderNodejsOrg(sPlatform)
+		envBin = "bin"
 	case "linux":
 		provider, _ = NewProviderNodejsOrg(sPlatform)
+		envBin = "bin"
 	default:
 		provider, _ = NewProviderNodejsOrg(sPlatform)
 	}
@@ -24,7 +27,7 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 		LinkName:   "NodeJS",
 		Command:    "-n",
 		Env:        "",
-		EnvBin:     "",
+		EnvBin:     envBin,
 		EnvChannel: "",
 		Provider:   provider,
 	}, nil

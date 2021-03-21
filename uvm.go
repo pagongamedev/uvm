@@ -274,12 +274,14 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
 	if !file.IsExist(sSDKPathVersion) {
+		var err error
 		sUrl, sFileName, sZipFolderName := setUrl(sd, sVersion, sTag, sKey, sPlatform, sArch)
 
 		sTempName := "temp." + sd.GetFileType()
 		sTempFile := filepath.Join(sdkPath, sTempName)
 
-		err := download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
+		// fmt.Println("Not Load :", sUrl, sFileName)
+		err = download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
 		if err != nil {
 			printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
 			return
@@ -289,6 +291,8 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		err = file.UnArchive(sd.GetArchiveType(), sTempFile, sdkPath, sd.GetIsRenameFolder(), sd.GetIsCreateFolder(), sZipFolderName, sFolderVersion)
 		if err != nil {
 			fmt.Println("Unzip Error ", err)
+			// os.Remove(sTempFile)
+			// os.RemoveAll(sSDKPathVersion)
 			return
 		}
 
@@ -414,22 +418,23 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 
 	// check env
 	isUpdateEnv := false
+	symPathBin := filepath.Clean(filepath.Join(symPath, sd.GetEnvBin()))
 
 	// check UVMLink Env
 	uvmlinkData, ok := os.LookupEnv(ENVUVMLink)
-	if !ok || !strings.Contains(uvmlinkData, symPath) {
-		CheckOrCreateEnv(sd, true, sPlatform, ENVUVMLink, uvmlinkData, rootPath, symPath)
+	if !ok || !strings.Contains(uvmlinkData, symPathBin) {
+		CheckOrCreateEnv(sd, true, sPlatform, ENVUVMLink, uvmlinkData, rootPath, symPathBin)
 		isUpdateEnv = true
 	}
 
 	// Set Env
 	if sd.GetEnv() != "" {
 		uvmSDKData, ok := os.LookupEnv(sd.GetEnv())
-		if !ok || !strings.Contains(uvmSDKData, symPath) {
+		if !ok || !strings.Contains(uvmSDKData, symPathBin) {
 			isUpdateEnv = true
 		}
 
-		CheckOrCreateEnv(sd, false, sPlatform, sd.GetEnv(), uvmSDKData, rootPath, symPath)
+		CheckOrCreateEnv(sd, false, sPlatform, sd.GetEnv(), uvmSDKData, rootPath, symPathBin)
 	}
 
 	// Set Env Channel
@@ -449,13 +454,21 @@ func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform st
 		case "darwin", "linux":
 		}
 	} else {
+		pathText := ""
+		switch sPlatform {
+		case "windows":
+			pathText = "Path"
+		case "darwin", "linux":
+			pathText = "PATH"
+		}
 		// Check uvmlink in path
-		path := os.Getenv("path")
+		path := os.Getenv(pathText)
 		if !strings.Contains(path, symPath) {
 			switch sPlatform {
 			case "windows":
 				fmt.Println("please add env : PATH = %" + ENVUVMLink + "% and restart shell")
 			case "darwin", "linux":
+				fmt.Println("\"" + symPath + "\" Not Found")
 				fmt.Println("Please Append \"" + ENVUVMLink + "\"")
 				fmt.Println("In \"/etc/profile.d/uvm.sh\" at export PATH")
 			}
@@ -479,9 +492,7 @@ func ReadEnvChannel(sd sdk.SDK, jsonChannelFilePath string) (bool, map[string]in
 	}
 	return isSameSDK, channelDataList
 }
-func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName string, envData string, rootPath string, symPath string) {
-
-	symPathBin := filepath.Clean(filepath.Join(symPath, sd.GetEnvBin()))
+func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName string, envData string, rootPath string, symPathBin string) {
 
 	switch sPlatform {
 	case "windows":
@@ -495,6 +506,7 @@ func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName strin
 			sPre+symPathBin)) {
 			return
 		}
+		fmt.Println(envName, sPre+symPathBin)
 	case "darwin", "linux":
 		strAdd := "Add"
 		if isAppend {
@@ -514,21 +526,17 @@ func unuse(sd sdk.SDK, rootPath string, sPlatform string) {
 
 func removeSymLink(sd sdk.SDK, rootPath string, sPlatform string) {
 	symPath := getSymPath(sd, sPlatform)
-	switch sPlatform {
-	case "windows":
-		// remove symlink if it already exists
-		sym, _ := os.Stat(symPath)
-		if sym != nil {
+	// remove symlink if it already exists
+	link, _ := os.Readlink(symPath)
+	if link != "" {
+		switch sPlatform {
+		case "windows":
 			if !helper.RunCommand(fmt.Sprintf(`"%s" cmd /C rmdir "%s"`,
 				filepath.Join(rootPath, "bin", "elevate.cmd"),
 				filepath.Clean(symPath))) {
 				return
 			}
-		}
-	case "darwin", "linux":
-		// remove symlink if it already exists
-		sym, _ := os.Stat(symPath)
-		if sym != nil {
+		case "darwin", "linux":
 			err := os.Remove(symPath)
 			if err != nil {
 				fmt.Println("Symlink Remove Error ", err)

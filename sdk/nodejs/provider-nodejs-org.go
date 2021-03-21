@@ -11,14 +11,14 @@ func NewProviderNodejsOrg(sPlatform string) (sdk.Provider, error) {
 		fileType = "zip"
 		archiveType = "zip"
 	case "darwin":
-		fileType = "tar.gz"
-		archiveType = "targz"
+		fileType = "tar.xz"
+		archiveType = "tarxz"
 	case "linux":
-		fileType = "tar.gz"
-		archiveType = "targz"
+		fileType = "tar.xz"
+		archiveType = "tarxz"
 	default:
-		fileType = "tar.gz"
-		archiveType = "targz"
+		fileType = "tar.xz"
+		archiveType = "tarxz"
 	}
 
 	// ==================================

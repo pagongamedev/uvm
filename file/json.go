@@ -14,10 +14,11 @@ func ReadJSONFile(fileName string) map[string]interface{} {
 	return data
 }
 
-func WriteJSONFile(fileName string, data map[string]interface{}) {
+func WriteJSONFile(fileName string, data map[string]interface{}) bool {
 	file, _ := os.OpenFile(fileName, os.O_CREATE, os.ModePerm)
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.Encode(data)
+	return true
 }

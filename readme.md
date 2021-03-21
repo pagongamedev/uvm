@@ -86,7 +86,7 @@ Manage multiple installations of sdk on a Windows computer.
 - "/etc/profile.d/uvm.sh"
  
   ```
-  export UVM_LINK=/usr/local/uvm_nodejs:/usr/local/uvm_flutter/bin:/usr/local/uvm_golang/bin:/usr/local/uvm_dart/bin:/usr/local/uvm_java/bin:/usr/local/uvm_python:/usr/local/uvm_ruby/bin
+  export UVM_LINK=/usr/local/uvm_nodejs/bin:/usr/local/uvm_flutter/bin:/usr/local/uvm_golang/bin:/usr/local/uvm_dart/bin:/usr/local/uvm_java/bin:/usr/local/uvm_python:/usr/local/uvm_ruby/bin
   export PATH=$PATH:$UVM_LINK:/usr/local/uvm
   ```
 
