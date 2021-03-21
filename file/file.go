@@ -159,10 +159,10 @@ func UnTarXz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 	return nil
 }
 
-// type symlinkPath struct {
-// 	path   string
-// 	target string
-// }
+type symlinkPath struct {
+	path   string
+	target string
+}
 
 func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
 	tarReader := tar.NewReader(r)
@@ -174,7 +174,7 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 			return errors.New("Create folder failed : " + err.Error())
 		}
 	}
-	// symlinkPathList := []symlinkPath{}
+	symlinkPathList := []symlinkPath{}
 	for {
 		header, err := tarReader.Next()
 
@@ -206,20 +206,14 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 			outFile.Close()
 		case tar.TypeSymlink:
 			destPath := dest
+			name := header.Linkname
 			if isRename {
-				destPath = filepath.Join(dest, nameNew)
+				destPath = filepath.Join(destPath, nameNew)
+				name = filepath.Join(nameNew, header.Linkname)
 			}
-			target := filepath.Clean(filepath.Join(destPath, header.Linkname))
-			// for _, symlink := range symlinkPathList {
+			target := filepath.Clean(filepath.Join(destPath, name))
 
-			// For Node Js
-			target = strings.Trim(target, ".js")
-			err := os.Symlink(target, path)
-			if err != nil {
-				return fmt.Errorf("symlink error %v", err.Error())
-			}
-			// }
-			// symlinkPathList = append(symlinkPathList, symlinkPath{path: path, target: target})
+			symlinkPathList = append(symlinkPathList, symlinkPath{path: path, target: target})
 		default:
 			return fmt.Errorf(
 				"ExtractTarGz: uknown type: %b in %s",
@@ -228,6 +222,16 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 		}
 	}
 
+	for _, symlink := range symlinkPathList {
+
+		// For Node Js
+
+		err := os.Symlink(symlink.target, symlink.path)
+		if err != nil {
+			return fmt.Errorf("symlink error %v", err.Error())
+		}
+	}
+	//
 	return nil
 }
 
