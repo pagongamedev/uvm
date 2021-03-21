@@ -42,6 +42,8 @@ func NewProviderJavaNet(sPlatform string) (sdk.Provider, error) {
 		IsManualInstall:  false,
 		IsCreateFolder:   false,
 		IsRenameFolder:   true,
+		IsUseKey:         true,
+		DetailKey:        "https://download.java.net/java/GA/jdk0.0.0/{{key}}/GPL/openjdk-0.0.0_linux-x64_bin.tar.gz",
 		Header:           "Provider Java.net",
 		LinkPage:         "https://jdk.java.net/archive/",
 		LinkDist:         "https://download.java.net/java/GA/jdk",

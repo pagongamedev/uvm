@@ -110,10 +110,20 @@ func (sdk *SDK) GetIsManualInstall() bool {
 	return sdk.Provider.IsManualInstall
 }
 
+func (sdk *SDK) GetIsUseKey() bool {
+	return sdk.Provider.IsUseKey
+}
+
+func (sdk *SDK) GetDetailKey() string {
+	return sdk.Provider.DetailKey
+}
+
 type Provider struct {
 	IsManualInstall  bool
 	IsCreateFolder   bool
 	IsRenameFolder   bool
+	IsUseKey         bool
+	DetailKey        string
 	Header           string
 	LinkPage         string
 	LinkDist         string

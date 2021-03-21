@@ -262,7 +262,7 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 	if sd.GetIsManualInstall() {
 
 		fmt.Printf("\nFailed Install : %v not supported cli download\n", sd.GetName())
-		fmt.Printf("\nplease download archive at :" + sd.GetLinkPage() + "\n")
+		fmt.Printf("\nplease download archive at : " + sd.GetLinkPage() + "\n")
 
 		fmt.Printf("and install at : " + filepath.Join(sdkPath, "{{v0.0.0}}") + "\n\n")
 		return
@@ -270,6 +270,15 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 
 	if sTag == "-" {
 		sTag = ""
+	}
+
+	if sd.GetIsUseKey() {
+		fmt.Printf("\nFailed Install : %v because {{Key}} not Found\n", sd.GetName())
+		fmt.Printf("\nplease check archive at : " + sd.GetLinkPage() + "\n")
+		fmt.Printf("\nKey Detail : " + sd.GetDetailKey())
+
+		return
+
 	}
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
 
