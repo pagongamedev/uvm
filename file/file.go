@@ -205,13 +205,8 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 			}
 			outFile.Close()
 		case tar.TypeSymlink:
-			destPath := dest
 			name := header.Linkname
-			if isRename {
-				destPath = filepath.Join(destPath, nameNew)
-				name = filepath.Join(nameNew, header.Linkname)
-			}
-			target := filepath.Clean(filepath.Join(destPath, name))
+			target := filepath.Clean(filepath.Join(filepath.Dir(path), name))
 
 			symlinkPathList = append(symlinkPathList, symlinkPath{path: path, target: target})
 		default:
