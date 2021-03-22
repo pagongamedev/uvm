@@ -23,7 +23,7 @@
 uvm
 luvm
 duvm
-channel.json
+# channel.json
 #SDK Path
 Git/
 NodeJS/
