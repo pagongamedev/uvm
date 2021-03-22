@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/pagongamedev/uvm/download"
 	"github.com/pagongamedev/uvm/file"
 	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/sdk"
@@ -294,12 +295,12 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		sTempName := "temp." + sd.GetFileType()
 		sTempFile := filepath.Join(sdkPath, sTempName)
 
-		fmt.Println("Not Load :", sUrl, sFileName)
-		// err = download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
-		// if err != nil {
-		// 	printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
-		// 	return
-		// }
+		// fmt.Println("Not Load :", sUrl, sFileName)
+		err = download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
+		if err != nil {
+			printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
+			return
+		}
 		path := ""
 		if sd.GetIsCreateFolder() {
 			path = sSDKPathVersion
@@ -311,17 +312,17 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		err = file.UnArchive(sd.GetArchiveType(), sTempFile, path, sd.GetIsRenameFolder(), sZipFolderName, sFolderVersion)
 		if err != nil {
 			fmt.Println("Unzip Error ", err)
-			// os.Remove(sTempFile)
-			// os.RemoveAll(sSDKPathVersion)
+			os.Remove(sTempFile)
+			os.RemoveAll(sSDKPathVersion)
 			return
 		}
 
 		// remove Temp
-		// err = os.Remove(sTempFile)
-		// if err != nil {
-		// 	fmt.Println("Error Delete Temp File", err)
-		// 	return
-		// }
+		err = os.Remove(sTempFile)
+		if err != nil {
+			fmt.Println("Error Delete Temp File", err)
+			return
+		}
 		fmt.Println("installed.")
 		fmt.Println()
 		fmt.Println("please run Command:", "uvm", sd.GetCommand(), "use", sVersion, sTag)
@@ -629,15 +630,15 @@ func printHelp() {
 	fmt.Println("\nOS : " + runtime.GOOS + " Arch : " + runtime.GOARCH + ".")
 
 	fmt.Println("\nSupport:")
-	fmt.Println("                                        |     Window     |     Darwin     |     Linux")
-	fmt.Println("  uvm -d  , uvm dart        : Dart           Suported")
-	fmt.Println("  uvm -f  , uvm flutter     : Flutter        Suported")
-	fmt.Println("  uvm -go , uvm golang      : Golang         Suported")
-	fmt.Println("  uvm -j  , uvm java        : Java         [Manual Ins.]")
-	fmt.Println("  uvm -n  , uvm nodejs      : NodeJS          Suported")
-	fmt.Println("  uvm -oj , uvm openjava    : OpenJava       [Use Key]")
-	fmt.Println("  uvm -p  , uvm python      : Python       [Manual Ins.]")
-	fmt.Println("  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]")
+	fmt.Println("                                        |     Window     |     Linux     |     Darwin")
+	fmt.Println("  uvm -d  , uvm dart        : Dart           Suported         Suported")
+	fmt.Println("  uvm -f  , uvm flutter     : Flutter        Suported         Suported")
+	fmt.Println("  uvm -go , uvm golang      : Golang         Suported         Suported")
+	fmt.Println("  uvm -j  , uvm java        : Java         [Manual Ins.]    [Manual Ins.]")
+	fmt.Println("  uvm -n  , uvm nodejs      : NodeJS         Suported         Suported")
+	fmt.Println("  uvm -oj , uvm openjava    : OpenJava       [Use Key]        [Use Key]")
+	fmt.Println("  uvm -p  , uvm python      : Python       [Manual Ins.]    [Manual Ins.]")
+	fmt.Println("  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]    [Manual Ins.]")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
 	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")

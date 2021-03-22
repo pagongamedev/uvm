@@ -15,7 +15,7 @@ func ReadJSONFile(fileName string) map[string]interface{} {
 }
 
 func WriteJSONFile(fileName string, data map[string]interface{}) bool {
-	file, _ := os.OpenFile(fileName, os.O_CREATE, os.ModePerm)
+	file, _ := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
