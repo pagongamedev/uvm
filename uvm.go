@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/pagongamedev/uvm/download"
 	"github.com/pagongamedev/uvm/file"
 	"github.com/pagongamedev/uvm/helper"
 	"github.com/pagongamedev/uvm/sdk"
@@ -272,32 +271,44 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		sTag = ""
 	}
 
-	if sd.GetIsUseKey() {
+	if sd.GetIsUseKey() && sKey == "" {
 		fmt.Printf("\nFailed Install : %v because {{Key}} not Found\n", sd.GetName())
-		fmt.Printf("\nplease check archive at : " + sd.GetLinkPage() + "\n")
-		fmt.Printf("\nKey Detail : " + sd.GetDetailKey())
+		fmt.Printf("\nKey Detail : %v\n", sd.GetDetailKey())
+		fmt.Printf("\nplease check archive at : " + sd.GetLinkPage() + "\n\n")
 
 		return
 
 	}
 	sFolderVersion, sSDKPathVersion := helper.GetFolderVersion(sdkPath, sVersion, sTag)
+	var err error
 
 	if !file.IsExist(sSDKPathVersion) {
-		var err error
+		os.Mkdir(sSDKPathVersion, os.ModeDir)
+		err = os.Mkdir(sSDKPathVersion, 0755)
+		if err != nil {
+			fmt.Println("Create folder failed : " + err.Error())
+		}
+
 		sUrl, sFileName, sZipFolderName := setUrl(sd, sVersion, sTag, sKey, sPlatform, sArch)
 
 		sTempName := "temp." + sd.GetFileType()
 		sTempFile := filepath.Join(sdkPath, sTempName)
 
-		// fmt.Println("Not Load :", sUrl, sFileName)
-		err = download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
-		if err != nil {
-			printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
-			return
+		fmt.Println("Not Load :", sUrl, sFileName)
+		// err = download.Loading(sd, rootPath, sdkPath, sUrl, sTempFile, sFileName, sVersion, sTag, sFolderVersion, sSDKPathVersion)
+		// if err != nil {
+		// 	printError(err, "\nPlease Check Archive at :", sd.GetLinkPage())
+		// 	return
+		// }
+		path := ""
+		if sd.GetIsCreateFolder() {
+			path = sSDKPathVersion
+		} else {
+			path = sdkPath
 		}
 
 		// unzip
-		err = file.UnArchive(sd.GetArchiveType(), sTempFile, sdkPath, sd.GetIsRenameFolder(), sd.GetIsCreateFolder(), sZipFolderName, sFolderVersion)
+		err = file.UnArchive(sd.GetArchiveType(), sTempFile, path, sd.GetIsRenameFolder(), sZipFolderName, sFolderVersion)
 		if err != nil {
 			fmt.Println("Unzip Error ", err)
 			// os.Remove(sTempFile)
@@ -306,11 +317,11 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 		}
 
 		// remove Temp
-		err = os.Remove(sTempFile)
-		if err != nil {
-			fmt.Println("Error Delete Temp File", err)
-			return
-		}
+		// err = os.Remove(sTempFile)
+		// if err != nil {
+		// 	fmt.Println("Error Delete Temp File", err)
+		// 	return
+		// }
 		fmt.Println("installed.")
 		fmt.Println()
 		fmt.Println("please run Command:", "uvm", sd.GetCommand(), "use", sVersion, sTag)
@@ -321,6 +332,10 @@ func install(sd sdk.SDK, sVersion string, sTag string, sKey string, rootPath str
 }
 
 func uninstall(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform string) {
+	if sTag == "-" {
+		sTag = ""
+	}
+
 	sVersion = helper.GetVersionWithV(sVersion)
 
 	// Make sure a version is specified
@@ -391,6 +406,10 @@ func list(sd sdk.SDK, sRootPath string, sPlatform string) {
 }
 
 func use(sd sdk.SDK, sVersion string, sTag string, rootPath string, sPlatform string) {
+	if sTag == "-" {
+		sTag = ""
+	}
+
 	// remove symlink if it already exists
 	removeSymLink(sd, rootPath, sPlatform)
 
@@ -529,6 +548,7 @@ func CheckOrCreateEnv(sd sdk.SDK, isAppend bool, sPlatform string, envName strin
 }
 
 func unuse(sd sdk.SDK, rootPath string, sPlatform string) {
+
 	removeSymLink(sd, rootPath, sPlatform)
 	fmt.Printf("remove symlink\n\n")
 }

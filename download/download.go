@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/pagongamedev/uvm/file"
 	"github.com/pagongamedev/uvm/sdk"
 )
 
@@ -23,12 +22,6 @@ func Loading(sd sdk.SDK, rootPath string, sdkPath string, sUrl string, sTempFile
 	}
 	fmt.Println("installing :", sd.GetName(), sVersion, sTag)
 	fmt.Println()
-
-	// Download
-
-	if sd.GetIsCreateFolder() && !file.IsExist(sSDKPathVersion) {
-		os.Mkdir(sSDKPathVersion, os.ModeDir)
-	}
 
 	Downloading(sUrl, sTempFile)
 

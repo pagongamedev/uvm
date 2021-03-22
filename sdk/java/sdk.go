@@ -20,10 +20,10 @@ func NewSDK(sPlatform string) (*sdk.SDK, error) {
 	// ==================================
 
 	return &sdk.SDK{
-		Name:       "Java",
-		LinkName:   "Java",
-		Command:    "-oj",
-		Env:        "JAVA_HOME",
+		Name:     "Java",
+		LinkName: "Java",
+		Command:  "-oj",
+		// Env:        "JAVA_HOME",
 		EnvBin:     "bin",
 		EnvChannel: "UVM_JAVA_CHANNEL",
 		Provider:   provider,

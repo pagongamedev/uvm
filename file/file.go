@@ -23,23 +23,23 @@ func IsExist(path string) bool {
 	return false
 }
 
-func UnArchive(ziptype string, src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func UnArchive(ziptype string, src string, dest string, isRename bool, nameOld string, nameNew string) error {
 	switch ziptype {
 	case "zip":
-		return UnZip(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+		return UnZip(src, dest, isRename, nameOld, nameNew)
 	case "targz":
-		return UnTarGz(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+		return UnTarGz(src, dest, isRename, nameOld, nameNew)
 	case "tarxz":
-		return UnTarXz(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+		return UnTarXz(src, dest, isRename, nameOld, nameNew)
 	case "7z":
-		return Un7z(src, dest, isRename, isCreateFolder, nameOld, nameNew)
+		return Un7z(src, dest, isRename, nameOld, nameNew)
 	}
 	return errors.New("not match zip type")
 }
 
 // Unzip func
 // https://stackoverflow.com/questions/20357223/easy-way-to-unzip-file-with-golang
-func UnZip(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func UnZip(src string, dest string, isRename bool, nameOld string, nameNew string) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return err
@@ -51,14 +51,6 @@ func UnZip(src string, dest string, isRename bool, isCreateFolder bool, nameOld 
 	}()
 
 	os.MkdirAll(dest, 0755)
-
-	if isCreateFolder {
-		dest = filepath.Join(dest, nameNew)
-		err := os.Mkdir(dest, 0755)
-		if err != nil {
-			return err
-		}
-	}
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extractAndWriteFile := func(f *zip.File) error {
@@ -114,7 +106,7 @@ func UnZip(src string, dest string, isRename bool, isCreateFolder bool, nameOld 
 	return nil
 }
 
-func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func UnTarGz(src string, dest string, isRename bool, nameOld string, nameNew string) error {
 	fi, err := os.Open(src)
 	if err != nil {
 		return err
@@ -129,7 +121,7 @@ func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 	}
 	defer zipReader.Close()
 
-	err = extractTar(zipReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	err = extractTar(zipReader, dest, isRename, nameOld, nameNew)
 	if err != nil {
 		return err
 	}
@@ -137,7 +129,7 @@ func UnTarGz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 	return nil
 }
 
-func UnTarXz(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func UnTarXz(src string, dest string, isRename bool, nameOld string, nameNew string) error {
 	fi, err := os.Open(src)
 	if err != nil {
 		return err
@@ -151,7 +143,7 @@ func UnTarXz(src string, dest string, isRename bool, isCreateFolder bool, nameOl
 		return err
 	}
 
-	err = extractTar(xzReader, dest, isRename, isCreateFolder, nameOld, nameNew)
+	err = extractTar(xzReader, dest, isRename, nameOld, nameNew)
 	if err != nil {
 		return err
 	}
@@ -164,16 +156,9 @@ type symlinkPath struct {
 	target string
 }
 
-func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func extractTar(r io.Reader, dest string, isRename bool, nameOld string, nameNew string) error {
 	tarReader := tar.NewReader(r)
 
-	if isCreateFolder {
-		dest = filepath.Join(dest, nameNew)
-		err := os.Mkdir(dest, 0755)
-		if err != nil {
-			return errors.New("Create folder failed : " + err.Error())
-		}
-	}
 	symlinkPathList := []symlinkPath{}
 	for {
 		header, err := tarReader.Next()
@@ -189,13 +174,15 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 			header.Name = strings.Replace(header.Name, nameOld, nameNew, 1)
 		}
 		path := filepath.Join(dest, header.Name)
-
+		// fmt.Println(header.Typeflag, " ::: ", path)
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0755); err != nil {
 				return errors.New("ExtractTarGz: Mkdir() failed : " + err.Error())
 			}
 		case tar.TypeReg:
+			os.MkdirAll(filepath.Dir(path), 0755)
+
 			outFile, err := os.Create(path)
 			if err != nil {
 				return errors.New("ExtractTarGz: Create() failed : " + err.Error())
@@ -218,8 +205,7 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 	}
 
 	for _, symlink := range symlinkPathList {
-
-		// For Node Js
+		os.MkdirAll(filepath.Dir(symlink.path), 0755)
 
 		err := os.Symlink(symlink.target, symlink.path)
 		if err != nil {
@@ -230,7 +216,7 @@ func extractTar(r io.Reader, dest string, isRename bool, isCreateFolder bool, na
 	return nil
 }
 
-func Un7z(src string, dest string, isRename bool, isCreateFolder bool, nameOld string, nameNew string) error {
+func Un7z(src string, dest string, isRename bool, nameOld string, nameNew string) error {
 	// fmt.Println("src ", src)
 
 	// a, err := lzmadec.NewArchive(src)
