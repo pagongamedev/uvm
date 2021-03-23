@@ -1,0 +1,2 @@
+$env:GOOS="linux"; go build -o luvm .\uvm.go   
+$env:GOOS="windows"; go build -o suvm.exe .\uvm.go   

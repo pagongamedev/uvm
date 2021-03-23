@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	UVMVersion    = "0.0.1"
+	UVMVersion    = "0.1.0"
 	UVMTagVersion = "uvm@" + UVMVersion
 	ENVUVMLink    = "UVM_LINK"
 )
@@ -631,14 +631,14 @@ func printHelp() {
 
 	fmt.Println("\nSupport:")
 	fmt.Println("                                        |     Window     |     Linux     |     Darwin")
-	fmt.Println("  uvm -d  , uvm dart        : Dart           Suported         Suported")
-	fmt.Println("  uvm -f  , uvm flutter     : Flutter        Suported         Suported")
-	fmt.Println("  uvm -go , uvm golang      : Golang         Suported         Suported")
-	fmt.Println("  uvm -j  , uvm java        : Java         [Manual Ins.]    [Manual Ins.]")
-	fmt.Println("  uvm -n  , uvm nodejs      : NodeJS         Suported         Suported")
-	fmt.Println("  uvm -oj , uvm openjava    : OpenJava       [Use Key]        [Use Key]")
-	fmt.Println("  uvm -p  , uvm python      : Python       [Manual Ins.]    [Manual Ins.]")
-	fmt.Println("  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]    [Manual Ins.]")
+	fmt.Println("  uvm -d  , uvm dart        : Dart           Suported         Suported     [Not Test Yet]")
+	fmt.Println("  uvm -f  , uvm flutter     : Flutter        Suported         Suported     [Not Test Yet]")
+	fmt.Println("  uvm -go , uvm golang      : Golang         Suported         Suported     [Not Test Yet]")
+	fmt.Println("  uvm -j  , uvm java        : Java         [Manual Ins.]    [Manual Ins.]  [Not Test Yet]")
+	fmt.Println("  uvm -n  , uvm nodejs      : NodeJS         Suported         Suported     [Not Test Yet]")
+	fmt.Println("  uvm -oj , uvm openjava    : OpenJava       [Use Key]        [Use Key]    [Not Test Yet]")
+	fmt.Println("  uvm -p  , uvm python      : Python       [Manual Ins.]    [Manual Ins.]  [Not Test Yet]")
+	fmt.Println("  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]    [Manual Ins.]  [Not Test Yet]")
 	fmt.Println("\nUsage:")
 	fmt.Println(" ")
 	fmt.Println("  uvm [-SDK] install <version> <tag>    : Install SDK Version.")
