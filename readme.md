@@ -6,14 +6,15 @@ Manage multiple installations of sdk on a Windows computer.
 
 # Supported
   ```
-  uvm -d  : Dart
-  uvm -f  : Flutter
-  uvm -n  : NodeJS
-  uvm -j :  Java           [Manual Install]
-  uvm -g  : Golang
-  uvm -oj : OpenJava       [Use Key]
-  uvm -p  : Python         [Manual Install]
-  uvm -r  : Ruby           [Manual Install]
+                                        |     Window     |     Linux     |     Darwin
+  uvm -d  , uvm dart        : Dart           Suported         Suported     [Not Test Yet]
+  uvm -f  , uvm flutter     : Flutter        Suported         Suported     [Not Test Yet]
+  uvm -go , uvm golang      : Golang         Suported         Suported     [Not Test Yet]
+  uvm -j  , uvm java        : Java         [Manual Ins.]    [Manual Ins.]  [Not Test Yet]
+  uvm -n  , uvm nodejs      : NodeJS         Suported         Suported     [Not Test Yet]
+  uvm -oj , uvm openjava    : OpenJava       [Use Key]        [Use Key]    [Not Test Yet]
+  uvm -p  , uvm python      : Python       [Manual Ins.]    [Manual Ins.]  [Not Test Yet]
+  uvm -r  , uvm ruby        : Ruby         [Manual Ins.]    [Manual Ins.]  [Not Test Yet]
   ```
 # Usage
   ```
@@ -73,7 +74,31 @@ Manage multiple installations of sdk on a Windows computer.
 
 
 ## MacOS
+1. Extract Installer Zip to folder (can use Command+Shift+G in finder for go to folder /usr/local/)
 
+  ```
+  /usr/local/uvm/
+  ```
+
+2. Create file ~/.bash_profile
+  
+- "~/.bash_profile"
+ 
+  ```
+  export UVM_LINK=/usr/local/uvm_nodejs/bin:/usr/local/uvm_flutter/bin:/usr/local/uvm_golang/bin:/usr/local/uvm_dart/bin:/usr/local/uvm_java/bin:/usr/local/uvm_python:/usr/local/uvm_ruby/bin
+  export PATH=$PATH:$UVM_LINK:/usr/local/uvm
+  ```
+
+4. Run Command source ~/.bash_profile for set environment
+  ```
+  $ source ~/.bash_profile
+  ```
+3. open shell with sudo mod (Use for Creak SymLink)
+   and run this command for using
+   
+   ```
+   $ uvm list
+   $ uvm 
 ## Linux
 1. Extract Installer Zip to folder
 
@@ -90,7 +115,7 @@ Manage multiple installations of sdk on a Windows computer.
   export PATH=$PATH:$UVM_LINK:/usr/local/uvm
   ```
 
-3. open shell like CMD or Powershell with Administrator Mode (Use for Creak SymLink)
+3. open shell with sudo mod (Use for Creak SymLink)
    and run this command for using
    
    ```
