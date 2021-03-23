@@ -2,7 +2,7 @@ reference by : https://github.com/coreybutler/nvm-windows
 
 # UVM : Unversal Version Manager
 
-Manage multiple installations of sdk on a Windows computer.
+Manage multiple installations of sdk on a Winoows,Linux,MacOs Computer.
 
 # Supported
   ```
