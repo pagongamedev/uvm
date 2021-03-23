@@ -90,7 +90,7 @@ func main() {
 	}
 
 	// ================
-	fmt.Printf("seleted sdk :%v os: %v arch: %v\n", sd.GetName(), sPlatform, sArch)
+	fmt.Printf("seleted sdk: %v os: %v arch: %v\n", sd.GetName(), sPlatform, sArch)
 
 	RunCommand(argList[2], *sd, data1, data2, data3, sRootPath, sPlatform, sArch)
 
