@@ -80,9 +80,9 @@ Manage multiple installations of sdk on a Windows computer.
   /usr/local/uvm/
   ```
 
-2. Create file ~/.bash_profile or "~/.zshrc" for zsh
+2. Create file \~/.bash_profile or "\~/.zshrc" for zsh
   
-- "~/.bash_profile" or "~/.zshrc"
+- "\~/.bash_profile" or "\~/.zshrc"
  
   ```
   export UVM_LINK=/usr/local/uvm_nodejs/bin:/usr/local/uvm_flutter/bin:/usr/local/uvm_golang/bin:/usr/local/uvm_dart/bin:/usr/local/uvm_java/bin:/usr/local/uvm_python:/usr/local/uvm_ruby/bin
