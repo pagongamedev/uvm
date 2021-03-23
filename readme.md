@@ -93,7 +93,15 @@ Manage multiple installations of sdk on a Windows computer.
   ```
   $ source ~/.bash_profile
   ```
-3. open shell with sudo mod (Use for Creak SymLink)
+
+5. Run Command chmod for execute
+  ```
+  $ chmod +x /usr/local/uvm/uvm
+  ```
+
+6. if uvm can't open try click right on uvm and click open with > terminal
+
+7. open shell with sudo mod (Use for Creak SymLink)
    and run this command for using
    
    ```
