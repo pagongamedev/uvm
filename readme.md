@@ -69,7 +69,7 @@ Manage multiple installations of sdk on a Winoows,Linux,MacOs Computer.
 - ENV : "JAVA_HOME"
  
    ```
-   C:\Program Files\uvm_java\bin
+   C:\Program Files\uvm_java
    ```
 
 
